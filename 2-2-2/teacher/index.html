@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>컴퓨터 비전 — 교사용 핵심 설명</title>
+<style>
+:root{--ink:#1a1a1a;--muted:#5b5b5b;--line:#d4d4d4;--tint:#f4f4f2;--acc:#1f5fbf;--acc-soft:#e8f0fc;--warn:#b3261e;--warn-soft:#fbe9e7;--ok:#1b7a3e;--ok-soft:#e6f4ea}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:16px;line-height:1.7;word-break:keep-all}
+header{border-bottom:1px solid var(--line);background:var(--tint)}
+.hin{max-width:960px;margin:0 auto;padding:18px 20px}
+.hin h1{margin:0;font-size:26px}.hin p{margin:4px 0 0;color:var(--muted)}
+main{max-width:960px;margin:0 auto;padding:16px 20px 80px}
+nav.toc{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin:14px 0 24px;font-size:15px}
+nav.toc a{margin-right:14px;color:var(--acc);text-decoration:none}
+h2{font-size:22px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin:36px 0 14px}
+h3{font-size:18px;margin:22px 0 8px}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:8px 0}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--tint)}
+.pt{border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:12px 0}
+.pt h3{margin:0 0 6px;font-size:17px}
+.say{border-left:4px solid var(--acc);background:var(--acc-soft);padding:8px 14px;margin:8px 0;border-radius:0 6px 6px 0}
+.say b:first-child{color:var(--acc)}
+.conf{border-left:4px solid var(--warn);background:var(--warn-soft);padding:8px 14px;margin:8px 0;border-radius:0 6px 6px 0}
+.ans{border-left:4px solid var(--ok);background:var(--ok-soft);padding:8px 14px;margin:8px 0;border-radius:0 6px 6px 0}
+.muted{color:var(--muted);font-size:14px}
+ul{margin:4px 0;padding-left:20px}li{margin:3px 0}
+code{font-family:Consolas,monospace;background:var(--tint);padding:0 4px;border-radius:3px;font-size:.92em}
+a{color:var(--acc)}
+.qa dt{font-weight:700;margin-top:12px}.qa dd{margin:4px 0 0 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header><div class="hin"><h1>컴퓨터 비전 — 교사용 핵심 설명</h1><p>2-2-2 · 교과서 102~109쪽 · 학생은 <a href="../">스스로 학습 페이지</a>로 공부하고, 교사는 아래 항목만 짚어 준다.</p></div></header>
+<main>
+<nav class="toc"><a href="#plan">수업 운영</a><a href="#key">꼭 설명할 핵심</a><a href="#demo">데모 운영</a><a href="#qa">예상 질문</a><a href="#diff">교과서와 다르게 쓴 곳</a><a href="#ans">정답 모음</a></nav>
+
+<h2 id="plan">1. 수업 운영 (50분)</h2>
+<table><tr><th style="width:22%">구간</th><th>내용</th><th style="width:10%">분</th><th style="width:20%">학생 페이지</th></tr>
+<tr><td>도입</td><td>학습 목표 · 이미지는 숫자(픽셀·RGB) · 컴퓨터 비전 4분야</td><td>7</td><td>1~3장</td></tr>
+<tr><td>실습 1</td><td>객체 탐지 체험(거리·책상·내 사진) + 학습지 기록</td><td>8</td><td>4장</td></tr>
+<tr><td>핵심</td><td>왜 CNN → 구조 → 필터 → 합성곱 계산(3·4단계) → 풀링 → 완전 연결층·학습</td><td>15</td><td>5~10장</td></tr>
+<tr><td>실습 2</td><td>CNN Explainer (학생 직접 또는 교사 시연)</td><td>8</td><td>11장</td></tr>
+<tr><td>생성형 AI</td><td>GAN · 프롬프트</td><td>5</td><td>12장</td></tr>
+<tr><td>활용</td><td>OCR · 객체 탐지 · 얼굴 인식 · 얼굴 영상 생성 · 딥페이크</td><td>4</td><td>13~14장</td></tr>
+<tr><td>정리</td><td>주요 개념 정리. 확인 문제(15장)는 과제</td><td>3</td><td>15~16장</td></tr></table>
+<p class="muted">여유가 없으면: 실습 2를 교사 시연 2~3분으로 줄이고(−5분), 활용은 한 장만 보여 주고 학습지 [활동 4]를 과제로(−4분). 그러면 40분 안팎.</p>
+
+<h2 id="key">2. 교사가 꼭 설명할 핵심</h2>
+
+<div class="pt"><h3>① 이미지는 숫자 표다 (102쪽)</h3>
+<div class="say"><b>이렇게 말한다</b> 흑백은 픽셀마다 밝기 값 <b>하나</b>(0 검정 ~ 255 흰색), 컬러는 픽셀마다 R·G·B <b>세 값</b>. 그래서 흑백 28×28은 784개, 같은 크기 컬러는 3배인 2,352개.</div>
+<div class="conf"><b>헷갈리는 점</b> "255는 흰색"(흑백)과 "(255, 255, 255)는 흰색"(컬러)은 둘 다 맞다. 흑백은 세 값이 모두 같은 컬러라고 보면 된다. 지난 시간 교과서 97쪽 그림에서 글씨(255)가 검게 보인 것은 <code>cmap='Greys'</code>가 큰 값을 어둡게 칠하기 때문이지 데이터가 바뀐 게 아니다.</div></div>
+
+<div class="pt"><h3>② 컴퓨터 비전 4분야는 두 가지 기준으로 나뉜다 (102쪽)</h3>
+<div class="say"><b>이렇게 말한다</b> 객체가 <b>하나냐 여럿이냐</b>, 결과가 <b>이름표만 · 상자 · 픽셀 단위</b>냐. 이미지 분류(하나, 이름표) / 객체 위치 식별(하나, 상자) / 객체 탐지(여럿, 상자) / 이미지 분할(여럿, 픽셀). 지난 시간 손 글씨 분류 = 이미지 분류.</div></div>
+
+<div class="pt"><h3>③ 왜 새로운 신경망이 필요한가 (104쪽)</h3>
+<div class="say"><b>이렇게 말한다</b> 지난 시간 모델은 28×28을 784개 한 줄로 펼쳤다 → 위아래로 붙어 있던 픽셀이 멀어져 <b>2차원 구조가 사라지고</b>, 첫 층 가중치만 78,400개로 <b>파라미터가 너무 많다</b>(교과서 104쪽 왼쪽 두 문제점). CNN은 이미지를 2차원 그대로 받아 작은 필터를 돌려쓴다.</div></div>
+
+<div class="pt"><h3>④ 합성곱층 = 특징 추출 (104~105쪽) — 가장 공들일 부분</h3>
+<div class="say"><b>이렇게 말한다</b>
+<ul><li><b>필터</b>는 3×3 숫자판 하나. 이미지 위를 한 칸씩 옮겨 다니며 겹친 칸끼리 곱해서 더한다(퍼셉트론과 같은 계산). 결과 표 한 장이 <b>특징 맵</b>. 필터 하나 → 맵 한 장.</li>
+<li>필터 하나는 특징 한 가지만 찾는다(필터 A 세로선, B 가로선). 그래서 한 층에 필터가 <b>여러 개</b>이고 맵도 여러 장 나온다.</li>
+<li>층이 깊어질수록 선 → 눈·코 → 얼굴. 교과서 105쪽의 "첫 번째 <u>필터</u>"는 "첫 번째 <u>층</u>"의 뜻(104쪽 그림은 층1·2·3).</li>
+<li><b>필터 값은 사람이 정하지 않는다.</b> 가중치이므로 학습으로 정해진다(105쪽 맨 아래 상자). 104쪽 필터 A·B는 원리를 보여 주는 예시.</li></ul></div>
+<div class="conf"><b>헷갈리는 점</b> 교과서 그림Ⅱ-20 오른쪽 작은 네모들은 특징 맵이 아니라 "그 층의 필터가 찾는 무늬"다. 학생에게는 "각 층이 찾아내는 특징"으로만 말하면 된다. 그림Ⅱ-21의 "두 결괏값을 합친 결과"는 윤곽선 그림을 보여 주려고 합친 것이고, CNN 안에서는 필터별 맵을 합치지 않고 따로 다음 층에 넘긴다(학생 자료에 한 줄 있음).</div>
+<div class="ans"><b>출력 크기</b> 한 칸씩 옮길 때 출력 = 입력 − 필터 + 1. 4×4에 3×3 → 2×2. (보폭·패딩은 교과서 밖)</div></div>
+
+<div class="pt"><h3>⑤ 풀링층 = 줄이기 (105쪽)</h3>
+<div class="say"><b>이렇게 말한다</b> 2×2 영역마다 최댓값 하나만 남긴다 → 가로·세로 절반, 칸 수 1/4. <b>학습할 가중치가 없다.</b> 줄이면 ① 계산이 가벼워지고 ② 글씨가 한두 칸 밀려도 같은 결과가 나오고 ③ 다음 층 필터가 더 넓은 범위를 보게 된다.</div>
+<div class="conf"><b>헷갈리는 점</b> 풀링이 합성곱층마다 붙는 것은 아니다. CNN Explainer 모델은 합성곱 두 번마다 풀링 한 번. 교과서 그림은 1+1을 한 묶음으로 그렸을 뿐, 몇 번씩 쌓을지는 설계자가 정한다.</div></div>
+
+<div class="pt"><h3>⑥ 완전 연결층 = 분류 (105쪽)</h3>
+<div class="say"><b>이렇게 말한다</b> 추출한 특징 맵들을 <b>일렬로(1차원으로)</b> 펼쳐 지난 시간 배운 신경망(Dense 층, 출력층 소프트맥스)에 넣어 분류한다. 지난 시간엔 입력 단계에서 펼쳤고, CNN은 특징을 다 뽑은 뒤에 펼친다. <b>CNN = 특징 추출(합성곱+풀링) + 지난 시간 신경망(완전 연결층).</b> 학습 방법은 같다: 순전파 → 손실함수 → 역전파로 필터 값과 가중치를 조정.</div></div>
+
+<div class="pt"><h3>⑦ 생성형 인공지능과 GAN (106~107쪽)</h3>
+<div class="say"><b>이렇게 말한다</b> 새로 만든 그림에는 비교할 정답이 없어 오차를 계산할 수 없다. GAN은 "진짜/가짜 맞히기"라는 정답 있는 문제로 바꾼다. 생성자(도둑)가 가짜를 만들고 감별자(경찰, 이진 분류 모델)가 가려낸다. 감별자의 판정이 생성자에게 고칠 방향을 준다. 번갈아 조금씩 배우다가 감별자가 반반밖에 못 가리면 종료. 쓸 때는 <b>생성자만</b> 쓴다. 프롬프트 = 원하는 결과가 나오게 하는 명령 문구, 구체적일수록 좋다.</div>
+<div class="conf"><b>헷갈리는 점</b> GAN은 생성형 AI의 한 방식일 뿐이다. 챗GPT·클로드는 "다음 단어 예측"(트랜스포머), 제미나이 이미지 생성은 확산 모델. 학생이 물으면 "자연어 처리 단원(114쪽~)에서 글 생성 AI를 배운다"로 넘긴다.</div></div>
+
+<div class="pt"><h3>⑧ 레이블 (103쪽 활동 3·4번)</h3>
+<div class="say"><b>이렇게 말한다</b> 레이블 = 정답으로 붙여 둔 <b>이름표</b>(붓꽃 품종, 손 글씨 정답 숫자, 객체 이름). 모델은 이름표가 붙은 것만 배운다. 객체 탐지 모델이 아는 80가지 목록이 곧 레이블 목록이라서, 샹들리에·거울·연필은 못 찾는다. 찾게 하려면 그 이름표를 붙인 사진으로 다시 학습시켜야 한다.</div></div>
+
+<div class="pt"><h3>⑨ 얼굴 영상 생성과 딥페이크 (109쪽)</h3>
+<div class="say"><b>이렇게 말한다</b> 교과서의 "다른 사람 또는 가상의 얼굴을 씌워 영상으로 만드는 기술"이 곧 딥페이크. 영화·복원처럼 좋은 쓰임도 있지만 동의 없이 쓰면 초상권 침해, 허위 영상은 범죄. 같은 기술이 쓰임에 따라 다르다. 가짜를 가려내는 딥페이크 탐지도 "진짜/가짜 분류 모델"이다.</div></div>
+
+<h2 id="demo">3. 데모 운영</h2>
+<table><tr><th style="width:22%">데모(학생 페이지)</th><th>운영 팁</th></tr>
+<tr><td>RGB 색 섞기 (2장)</td><td>노랑 → 검은색 → 흰색 버튼 순서로. "빛은 더할수록 밝아진다"만 짚는다.</td></tr>
+<tr><td>객체 탐지 (4장)</td><td>처음 <b>분석하기</b>를 누르면 모델(약 20MB)을 내려받느라 20~30초 걸린다. 수업 전에 한 번 눌러 두면 빠르다. 거리 사진: 사람·자동차·자전거·신호등·트럭 / 책상: 노트북·책 (연필·공책은 못 찾음 → 3·4번 질문에 좋다). 사진은 학생 컴퓨터 안에서만 처리된다. 학교 망에서 cdn.jsdelivr.net이 막히면 안 된다.</td></tr>
+<tr><td>필터 적용 (7장)</td><td>막대 무늬 → 필터 A 결과엔 세로 막대만, B엔 가로 막대만. "필터 하나는 특징 한 가지"를 여기서.</td></tr>
+<tr><td>합성곱 계산기 (8장)</td><td>1·2단계 버튼으로 계산을 보여 주고, 3·4단계는 학생이 입력 → 확인(10, 4). "다른 숫자로 해 보기"는 필터는 그대로임을 보여 준다.</td></tr>
+<tr><td>풀링 (9장)</td><td>1~4단계 버튼. 네 단계 끝나면 "4×4가 2×2로 줄었다".</td></tr>
+<tr><td>CNN Explainer (11장)</td><td>입력(R·G·B 세 장) → <code>conv_1_1</code> 클릭(필터가 미끄러지며 맵 생성, 필터 숫자는 소수) → <code>relu</code>(음수→0) → <code>max_pool</code>(최댓값) → <code>output</code>(가장 긴 막대). 영어 사이트, 처음 로딩 몇 초.</td></tr></table>
+
+<h2 id="qa">4. 예상 질문과 답</h2>
+<dl class="qa">
+<dt>Q. 필터는 누가 만들어요?</dt><dd>학습이. 처음엔 임의의 값, 틀릴 때마다 역전파로 조정된다. 104쪽 필터 A·B는 설명용 예시.</dd>
+<dt>Q. 한 층에 필터가 왜 여러 개예요? 32, 64는 정해진 거예요?</dt><dd>필터 하나는 특징 한 가지만 찾아서. 개수는 지난 시간 노드 수(100, 50)처럼 설계자가 정한다. CNN Explainer는 층마다 10개.</dd>
+<dt>Q. 특징 맵 30장은 어떻게 합쳐요?</dt><dd>합치지 않고 겹쳐 쌓아 둔다(컬러의 R·G·B 3장처럼). 다음 층 필터가 30장을 한꺼번에 보고 맵 한 장을 만든다. 맨 마지막에 전부 일렬로 펼쳐 완전 연결층에 넣는다.</dd>
+<dt>Q. 풀링하면 정보가 사라지는데 괜찮아요?</dt><dd>"있다/없다"는 남고 정확한 위치만 버려진다. 분류에는 오히려 유리하다(글씨가 밀려도 같은 결과).</dd>
+<dt>Q. 렐루는 왜 있어요?</dt><dd>지난 시간 활성화 함수 그대로. 필터 결과의 음수를 0으로 만들어 "이 무늬가 있다"는 신호만 남기고, 층을 쌓는 의미를 만든다(곱하고 더하기만 반복하면 층을 쌓아도 한 번 계산한 것과 같다).</dd>
+<dt>Q. CNN은 DNN이랑 완전 다른 거예요?</dt><dd>포함 관계. 퍼셉트론 → 인공신경망 → 심층 신경망(딥러닝) 안에 지난 시간 모델(Dense만)과 CNN(합성곱·풀링 + Dense)이 둘 다 들어간다. 은닉층의 종류가 다를 뿐.</dd>
+<dt>Q. 챗GPT도 GAN이에요?</dt><dd>아니다. 글 생성은 "다음 단어 예측" 방식. 자연어 처리 단원에서 다룬다.</dd>
+<dt>Q. 객체 탐지에서 왜 건물·나무는 못 찾아요?</dt><dd>레이블(80가지)에 없어서. 레이블에 추가해 학습시키면 찾는다.</dd></dl>
+
+<h2 id="diff">5. 교과서와 다르게 쓴 곳</h2>
+<ul>
+<li>105쪽 "첫 번째 <u>필터</u>를 통과할 때는 경계선…" → 자료에서는 "첫 번째 <u>합성곱층</u>"(104쪽 그림·본문과 맞춤).</li>
+<li>103쪽 ETRI 객체 탐지 사이트가 닫혀 페이지 안에서 직접 돌아가는 객체 탐지로 대체(같은 80종). 거실 사진 대신 위키미디어 공용 CC0 사진(거리·책상) 사용.</li>
+<li>106쪽 서비스 예시(달리2·AskUp·뤼튼)는 종료·변동되어 뺌. 107쪽 함께 해결하기(이미지 생성), 108~109쪽 실습해 보기 4개, 109쪽 스스로 해결하기는 수업 시간상 뺌. 프롬프트 정의는 12장에 유지.</li>
+<li>교과서 밖 추가: 풀링층에 가중치가 없다, 필터 값은 학습으로 정해진다(105쪽 근거), 딥페이크 용어, 지난 시간 모델 파라미터 84,060개.</li></ul>
+
+<h2 id="ans">6. 정답 모음</h2>
+<div class="grid">
+<div class="pt"><h3>합성곱 연산 (105쪽 그림Ⅱ-22)</h3><p>3단계(왼쪽 아래) = <b>10</b>, 4단계(오른쪽 아래) = <b>4</b> → 출력 [6 9 / 10 4]</p>
+<h3>풀링 (그림Ⅱ-23)</h3><p>[5 4 / 7 9]</p></div>
+<div class="pt"><h3>확인 문제 (학생 페이지 15장)</h3><ol style="margin:0;padding-left:20px"><li>0~255</li><li>객체 탐지</li><li>합성곱층</li><li>2×2</li><li>각 영역의 대푯값만 남겨 크기를 줄인다</li><li>훈련 데이터로 학습하며 만들어진다</li><li>감별자</li><li>프롬프트</li></ol></div></div>
+<p><b>학습지</b> 구글 드라이브 "[인기초] 2-2-2. 컴퓨터 비전" / "(교사용 정답)". 객체 탐지 결과 예시: 탐지 person·car·bicycle·traffic light, 미탐지 건물·나무·가로등 / 연필·공책.</p>
+</main>
+</body></html>
