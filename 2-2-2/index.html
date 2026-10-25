@@ -320,14 +320,14 @@ document.querySelectorAll('.blank').forEach(function(b){b.addEventListener('clic
 document.querySelectorAll('.reveal-all').forEach(function(x){x.onclick=function(){x.closest('.code').querySelectorAll('.blank').forEach(function(b){b.click()})}});
 // 퀴즈: 모두 고른 뒤 한 번에 채점
 var sc=document.getElementById('score'),qz=[].slice.call(document.querySelectorAll('.quiz'));
-document.getElementById('grade').onclick=function(){var n=0;
+var gradeBtn=document.getElementById('grade');if(gradeBtn)gradeBtn.onclick=function(){var n=0;
  qz.forEach(function(q){var fb=q.querySelector('.fb'),ex=q.querySelector('.ex'),s=q.querySelector('input:checked');
   var ok=!!s&&s.value===q.dataset.ans;if(ok)n++;
   fb.hidden=false;fb.className='fb '+(ok?'ok':'no');fb.textContent=ok?'⭕ 정답':(s?'❌ 오답':'❌ 답을 고르지 않았어요');
   ex.hidden=false;
   q.querySelectorAll('.opt').forEach(function(o){o.classList.toggle('right',o.querySelector('input').value===q.dataset.ans)})});
  sc.textContent=n};
-document.getElementById('retry').onclick=function(){qz.forEach(function(q){q.querySelectorAll('input').forEach(function(i){i.checked=false});
+var retryBtn=document.getElementById('retry');if(retryBtn)retryBtn.onclick=function(){qz.forEach(function(q){q.querySelectorAll('input').forEach(function(i){i.checked=false});
  q.querySelector('.fb').hidden=true;q.querySelector('.ex').hidden=true;q.querySelectorAll('.opt').forEach(function(o){o.classList.remove('right')})});sc.textContent='-'};
 // 퍼셉트론 계산기
 function calc(){var e=document.getElementById('pout');if(!e)return;function v(id){return parseFloat(document.getElementById(id).value)||0}
