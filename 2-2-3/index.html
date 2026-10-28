@@ -191,10 +191,10 @@ input.txt{width:100%;box-sizing:border-box;font-family:inherit;font-size:15px;bo
 <p class="legend" id="rcInfo"></p></div>
 <h3>코랩에 업로드하기</h3>
 <ol class="steps">
-<li>코랩 노트북을 열고 왼쪽의 <b>📁 파일</b> 아이콘을 누른다.</li>
-<li><b>세션 저장소에 업로드</b> 아이콘을 누르거나, 다운로드 폴더의 play1.wav를 파일 목록에 <b>끌어다 놓는다</b>.</li>
-<li>파일 목록에 <b>play1.wav</b>가 보이면 준비 끝.</li></ol>
-<p class="tip">💡 코랩 세션이 끊기면 업로드한 파일도 사라진다. 그때는 다시 업로드한다.</p>
+<li>코랩 노트북을 열고 <b>⓪번 셀</b>을 실행하면 <b>파일 선택</b> 버튼이 나온다.</li>
+<li>다운로드 폴더의 <b>play1.wav</b>를 골라 올린다. (이전 시간 Iris1.csv를 올릴 때와 같은 방법)</li>
+<li><b>play1.wav 준비 완료!</b>가 출력되면 준비 끝.</li></ol>
+<p class="tip">💡 코랩 세션이 끊기면 업로드한 파일도 사라진다. 그때는 ⓪번 셀을 다시 실행해 올린다.</p>
 <details class="result"><summary>⑥ 스마트폰으로 녹음해서 확장자가 ‘m4a’라면?</summary><div class="rbody">
 <p>pydub 라이브러리를 사용하여 ‘wav’로 변환한다. 크롬북 녹음기 앱으로 녹음한 <b>webm</b> 파일이라면 <code>'m4a'</code> 자리를 <code>'webm'</code>으로 바꾸면 된다.</p>
 <pre>!pip install pydub   # pydub 라이브러리 설치
@@ -241,7 +241,7 @@ if text <button class="blank" data-a="==" aria-label="빈칸 — 눌러서 답 �
 <li>상표 붙인 큰 깡통은 깐 깡통인가 안 깐 깡통인가?</li>
 <li>내가 그린 구름 그림은 새털구름 그린 구름 그림이고, 네가 그린 구름 그림은 깃털구름 그린 구름 그림이다.</li></ul></div>
 <ol class="steps">
-<li>④⑤로 돌아가 새 문장을 녹음하고 play1.wav를 내려받는다. 코랩에 업로드하면 이전 파일을 덮어쓴다.</li>
+<li>④⑤로 돌아가 새 문장을 녹음하고 play1.wav를 내려받은 뒤, 코랩 ⓪번 셀을 다시 실행해 올린다. 같은 이름이라 이전 파일을 덮어쓴다.</li>
 <li>⑧의 <code>text</code>를 새 문장으로 바꾸고 ⑦ → ⑧을 다시 실행한다.</li>
 <li>친구가 들은 결과와 인공지능이 인식한 결과를 학습지의 표에 적는다.</li></ol>
 <div class="tw"><table class=""><thead><tr><th>친구가 들은 결과</th><th>음성 인식 인공지능이 인식한 결과</th></tr></thead><tbody><tr><td>(친구가 들은 대로 받아 적는다)</td><td>(⑦의 출력 결과를 적는다)</td></tr></tbody></table></div>
