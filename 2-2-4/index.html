@@ -235,6 +235,9 @@ textarea.txt{min-height:110px;line-height:1.6;resize:vertical}
 <li>코랩 노트북을 열고 <b>①번 셀</b>을 실행한다. 한글 글꼴을 설치하느라 30초쯤 걸린다.</li>
 <li><b>②번 셀</b>을 실행하면 입력 칸이 나온다. 뉴스 기사, 노래 가사 등 분석할 글을 붙여 넣고 Enter를 누른다.</li>
 <li>③④번 셀의 빈칸을 채우고 실행한다.</li></ol>
+<div class="demo" id="cp"><b>📋 붙여 넣을 글이 없다면</b> 오늘 배운 내용을 정리한 글이다. <b>복사</b>를 누른 뒤 코랩 ②번 셀의 입력 칸에 붙여 넣자.
+<textarea class="txt" id="cpTxt" readonly>자연어 처리는 기계가 사람의 언어를 이해하고 생성하며 인간과 상호 작용하는 기술이다. 자연어 처리는 언어 이해와 언어 생성으로 나눌 수 있다. 인공지능은 텍스트 데이터를 숫자로 변환하여 인식한다. 텍스트를 숫자로 변환하는 방법에는 단어의 고유한 값, 원-핫 인코딩, 워드 임베딩이 있다. 원-핫 인코딩은 해당 단어만 1로 표현하는 희소 표현이고, 워드 임베딩은 학습을 통해 단어를 실숫값으로 변환하는 밀집 표현이다. 언어 이해 방식에는 빈도수 기반 방식, 의미론적 접근 방식, 딥러닝을 이용한 방식이 있다. 빈도수 기반 방식은 단어가 얼마나 자주 등장하는지를 세는 방식이다. 순환 신경망은 이전의 정보를 기억하면서 현재의 입력을 처리한다. 생성형 언어 모델은 다음에 나올 단어의 확률을 예측하여 문장을 생성한다.</textarea>
+<div class="ctrl"><button class="check" id="cpBtn">복사</button><span class="chk" id="cpMsg"></span></div></div>
 <div class="purpose"><b>🎯 이 코드는 무엇을 할까?</b><p>글에 나온 단어마다 인덱스(고유한 값)를 붙이고 몇 번 나왔는지 센다. 순서와 의미는 무시하고 빈도수만 세는 단어 주머니이다.</p></div>
 <div class="code"><div class="code-head"><span>코드 셀 ③</span><button class="reveal-all">빈칸 모두 보기</button></div><pre># ③ 단어 빈도수 세기
 from sklearn.feature_extraction.text import CountVectorizer
@@ -493,6 +496,11 @@ var BAGS=[['연예',['배우','공연','가수','영화']],['경제',['투자','
   tbl.innerHTML='<div class="tw"><table class="small"><thead><tr><th>단어</th><th>빈도수</th></tr></thead><tbody>'+ls.slice(0,12).map(function(it){return '<tr><td>'+it[0]+'</td><td>'+it[1]+'</td></tr>'}).join('')+'</tbody></table></div>';
   msg.textContent='서로 다른 단어 '+ls.length+'개 (상위 45개까지 표시)'}
  b.onclick=draw;document.getElementById('wcAgain').onclick=draw;draw()})();
+// 복사 버튼
+(function(){var b=document.getElementById('cpBtn');if(!b)return;var t=document.getElementById('cpTxt'),m=document.getElementById('cpMsg');
+ b.onclick=function(){var done=function(){m.textContent='복사했다. 코랩 ②번 셀에 붙여 넣자'};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t.value).then(done,function(){t.select();document.execCommand('copy');done()})}
+  else{t.select();document.execCommand('copy');done()}}})();
 // 개체명
 (function(){var box=document.getElementById('neToks');if(!box)return;var L=['없음','사람','장소','숫자'],ts=[].slice.call(box.querySelectorAll('.tok')),msg=document.getElementById('neMsg');
  ts.forEach(function(t){t.onclick=function(){var b=t.querySelector('b'),i=(L.indexOf(b.textContent)+1)%L.length;b.textContent=L[i];t.className='tok'}});
