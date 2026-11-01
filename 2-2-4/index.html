@@ -272,6 +272,13 @@ plt.axis('off')
 plt.show()</pre></div>
 <details class="result"><summary>코드 설명 보기 (빈칸의 답이 들어 있어요)</summary><div class="rbody"><div class="tw"><table class=""><thead><tr><th>부분</th><th>의미</th></tr></thead><tbody><tr><td><code>WordCloud(font_path = …, max_words = 50, …)</code></td><td>한글 글꼴, 그릴 단어 수, 배경색, 크기를 정해 워드 클라우드 도구를 만든다</td></tr><tr><td><code>generate(text)</code></td><td>글에서 단어 빈도수를 세어 워드 클라우드를 만든다</td></tr><tr><td><code>plt.imshow( )</code> / <code>plt.axis('off')</code></td><td>그림을 보여 주고 눈금을 숨긴다</td></tr></tbody></table></div></div></details>
 <details class="result"><summary>실행 결과 보기</summary><div class="rbody"><p>자주 나온 단어일수록 크게 그려진 워드 클라우드가 나온다. 한글이 □로 나오면 ①번 셀을 다시 실행한다.</p><p><code>max_words</code>를 20으로 줄이거나 <code>background_color</code>를 <code>'black'</code>으로 바꿔 다시 실행해 보자.</p></div></details>
+<h3>다른 글로 한 번 더 만들기</h3>
+<p>이번에는 글을 <b>직접 찾아서</b> 넣어 보자. 학교 홈페이지 공지, 교과서의 다른 쪽 본문, 애국가 가사, 내가 쓴 글 등 아무 글이나 좋다. 코랩 ②번 셀을 다시 실행해 새 글을 붙여 넣고 ③④번 셀을 다시 실행한다.</p>
+<ol class="steps">
+<li>글의 출처(어디서 가져온 글인지)와 제목을 학습지에 적는다.</li>
+<li>가장 크게 나온 단어 세 개를 학습지에 적는다.</li>
+<li>워드 클라우드를 캡처해 학습지에 붙인다.</li></ol>
+<div class="think"><p class="q">🤔 두 글의 워드 클라우드만 보고 각 글이 무엇에 관한 글인지 알 수 있을까?</p><details><summary>생각한 뒤 눌러서 답 확인</summary><div class="a">대체로 알 수 있다. 자주 나온 단어가 크게 보이므로 글의 <b>주제어</b>를 한눈에 파악할 수 있다. 다만 ‘그리고’, ‘있다’처럼 자주 쓰이지만 뜻이 없는 단어도 크게 나오므로, 높은 빈도의 단어가 항상 중요한 것은 아닐 수 있다.</div></details></div>
 <div class="think"><p class="q">🤔 빈도수 기반 방식(워드 클라우드)의 장점과 단점은?</p><details><summary>생각한 뒤 눌러서 답 확인</summary><div class="a"><b>장점</b>: 단어의 크기로 빈도수를 표현하기 때문에 어떤 단어가 중요한지 한눈에 파악할 수 있다.<br><b>단점</b>: 단순히 빈도만을 고려하기 때문에 문맥이나 의미론적인 요소는 반영되지 않아, 높은 빈도의 단어가 항상 중요한 것은 아닐 수 있다.</div></details></div></section><section class="slide"><div class="sh"><h2>언어 이해 ② 의미론적 접근 방식</h2><span class="page">117쪽</span></div>
 <p>빈도수 기반의 방식은 단어의 출현 빈도수만 고려하기 때문에 단어가 문장 내에서 어떻게 사용되는지 또는 문장의 전체적인 의미는 무엇인지 등을 알기 어렵다. 인공지능이 인간의 언어를 더 깊이 이해하기 위해서는 <b><button class="blank" data-a="형태소 분석" aria-label="빈칸 — 눌러서 답 보기">______</button></b>, <b><button class="blank" data-a="구문 분석" aria-label="빈칸 — 눌러서 답 보기">_____</button></b>, <b><button class="blank" data-a="의미·개체명 분석" aria-label="빈칸 — 눌러서 답 보기">_________</button></b>, <b><button class="blank" data-a="담화·의도 분석" aria-label="빈칸 — 눌러서 답 보기">________</button></b> 등의 과정을 거쳐야 한다.</p>
 <div class="stepbox"><h4>1단계 형태소 분석</h4><ul>
