@@ -122,6 +122,7 @@ canvas.ic{width:36px;height:36px;display:inline-block;border:0;background:none;i
 #mSignal.on{display:block}
 @keyframes sig{from{opacity:.55}to{opacity:1}}
 @media (max-width:700px){#mSignal{top:78px;font-size:13px}}
+#mSignal.strong{color:#ffe65a;border-color:#ffd84a;background:rgba(60,40,0,.8);animation-duration:.5s}
 
 :root{--bg:#1f1f26;--panel:#2c2c36;--panel2:#3b3b47;--line:#565666;--ink:#eaf0ff;--muted:#9aa7c7;--cyan:#4fd1ff;--yellow:#ffd166;--ok:#3ddc84;--no:#ff6b6b}
 *{box-sizing:border-box}
@@ -209,7 +210,7 @@ function icon(k,px){return ic(k[0]==='p'?PICKIC[+k.slice(1)]:OREIC[+k.slice(1)],
 const Mine=(()=>{
 const X=21,Y=11,Z=21,AIR=-1,BED=7,CH=[8,12,4,6,8,12];
 const BN=['돌','석탄 광석','철 광석','금 광석','다이아 광석','인공지능 코어'],JO=['돌을','석탄을','철을','금을','다이아를','AI 코어를'],QP=[.15,.35,.55,.8,.95,1];
-const P={coal:.07,iron:.06,gold:.035,dia:.022,vein:.45,cores:2};let cores=[],coreHintT=0;
+const P={coal:.07,iron:.06,gold:.035,dia:.022,vein:.45,cores:4};let cores=[],coreHintT=0;
 /* 광석을 캘 때 나오는 문제. 광석이 귀할수록 뒤쪽 내용이다. */
 const QB={1:[{q:"퍼셉트론에서 입력값마다 곱해 주는 값은?",o:["가중치", "편향", "에포크", "레이블"],e:"퍼셉트론은 입력값마다 가중치를 곱해 더하고, 편향을 더한 뒤 활성화 함수에 넣는다.",pg:"91쪽 퍼셉트론",sl:[1, 3],d:1},
 {q:"퍼셉트론은 무엇의 작동 방식을 흉내 낸 것일까?",o:["뇌의 신경 세포(뉴런)", "컴퓨터의 기억 장치", "인터넷 검색 엔진", "계산기의 덧셈 회로"],e:"퍼셉트론은 뉴런의 작동 방식을 모방한 계산 단위다.",pg:"91쪽 퍼셉트론",sl:[1, 2],d:1},
@@ -416,7 +417,7 @@ function dirv(){const cp=Math.cos(pl.pitch);return [-Math.sin(pl.yaw)*cp,Math.si
 function ray(){const o=[pl.x,pl.y+1.55,pl.z],d=dirv(),c=o.map(Math.floor),st=d.map(v=>v>0?1:-1),td=d.map(v=>v===0?1e9:Math.abs(1/v)),tm=d.map((v,i)=>v===0?1e9:((v>0?c[i]+1:c[i])-o[i])/v);
 for(let i=0;i<30;i++){const a=tm[0]<tm[1]?(tm[0]<tm[2]?0:2):(tm[1]<tm[2]?1:2);if(tm[a]>4.6)return null;c[a]+=st[a];tm[a]+=td[a];const t=get(c[0],c[1],c[2]);if(t!==AIR)return {x:c[0],y:c[1],z:c[2],t};}return null;}
 function need(t){return PICK.findIndex(p=>p.can>=t);}
-function update(dt){{const now=performance.now();if(now>coreHintT&&cores.length){let best=99;cores.forEach(([x,y,z])=>{if(g[idx(x,y,z)]===5){const d=Math.max(Math.abs(x+.5-pl.x),Math.abs(y+.5-pl.y),Math.abs(z+.5-pl.z));if(d<best)best=d;}});$('#mSignal').classList.toggle('on',best<=4.5);coreHintT=now+700;}}regen+=dt;if(regen>=12){regen=0;if(S.energy<8){S.energy++;hud();}}{const eb=$('#mEnBtn');if(eb)eb.classList.toggle('on',S.energy<=0);}const sp=4.3;if(keys.ArrowLeft)pl.yaw+=1.9*dt;if(keys.ArrowRight)pl.yaw-=1.9*dt;if(keys.ArrowUp)pl.pitch=Math.min(1.5,pl.pitch+1.5*dt);if(keys.ArrowDown)pl.pitch=Math.max(-1.5,pl.pitch-1.5*dt);
+function update(dt){{const now=performance.now();if(now>coreHintT&&cores.length){let best=99;cores.forEach(([x,y,z])=>{if(g[idx(x,y,z)]===5){const d=Math.max(Math.abs(x+.5-pl.x),Math.abs(y+.5-pl.y),Math.abs(z+.5-pl.z));if(d<best)best=d;}});const sg=$('#mSignal');sg.classList.toggle('on',best<=4.5);sg.classList.toggle('strong',best<=2.5);sg.textContent=best<=2.5?'📡 아주 강한 신호! 인공지능 코어가 바로 옆 어딘가에 있다':'📡 희미한 신호… 인공지능 코어가 가까이 있다';coreHintT=now+700;}}regen+=dt;if(regen>=12){regen=0;if(S.energy<8){S.energy++;hud();}}{const eb=$('#mEnBtn');if(eb)eb.classList.toggle('on',S.energy<=0);}const sp=4.3;if(keys.ArrowLeft)pl.yaw+=1.9*dt;if(keys.ArrowRight)pl.yaw-=1.9*dt;if(keys.ArrowUp)pl.pitch=Math.min(1.5,pl.pitch+1.5*dt);if(keys.ArrowDown)pl.pitch=Math.max(-1.5,pl.pitch-1.5*dt);
 let f=(keys.KeyW?1:0)-(keys.KeyS?1:0),s=(keys.KeyD?1:0)-(keys.KeyA?1:0);if(f||s){const m=Math.hypot(f,s);f/=m;s/=m;const dx=(-Math.sin(pl.yaw)*f+Math.cos(pl.yaw)*s)*sp*dt,dz=(-Math.cos(pl.yaw)*f-Math.sin(pl.yaw)*s)*sp*dt;let blocked=false;
 if(!hit(pl.x+dx,pl.y,pl.z))pl.x+=dx;else blocked=true;if(!hit(pl.x,pl.y,pl.z+dz))pl.z+=dz;else blocked=true;
 if(blocked&&pl.ground&&!hit(pl.x+dx*3,pl.y+1.05,pl.z+dz*3)&&!hit(pl.x,pl.y+1.05,pl.z))pl.vy=7.4;}
