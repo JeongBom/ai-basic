@@ -118,6 +118,11 @@ canvas.ic{width:36px;height:36px;display:inline-block;border:0;background:none;i
 .gui .qhint{margin:8px 0}.gui .qhint #mQhintBox{margin-top:6px;padding:8px 12px;background:#e9e9ef;color:#1f1f26;line-height:1.7}.gui .qhint #mQhintBox:empty{display:none}.gui .qhint a.btn{text-decoration:none;display:inline-block}
 #rpEnd p:first-child{font-size:18px;color:#1f1f26}
 
+#mSignal{position:absolute;left:50%;top:46px;transform:translateX(-50%);display:none;color:#9fe8ff;background:rgba(10,20,40,.75);border:2px solid #4fd1ff;padding:3px 12px;white-space:nowrap;pointer-events:none;animation:sig 1.2s infinite alternate}
+#mSignal.on{display:block}
+@keyframes sig{from{opacity:.55}to{opacity:1}}
+@media (max-width:700px){#mSignal{top:78px;font-size:13px}}
+
 :root{--bg:#1f1f26;--panel:#2c2c36;--panel2:#3b3b47;--line:#565666;--ink:#eaf0ff;--muted:#9aa7c7;--cyan:#4fd1ff;--yellow:#ffd166;--ok:#3ddc84;--no:#ff6b6b}
 *{box-sizing:border-box}
 html,body{margin:0;background:#1f1f26;color:var(--ink);font-family:'Galmuri14','Galmuri11','Malgun Gothic',sans-serif;font-size:15px;line-height:1.7;word-break:keep-all}
@@ -159,6 +164,7 @@ input[type=text]{font-size:16px;background:#0b101c;color:var(--ink);border:1px s
 <div id="mCross"></div>
 <div id="mTop"><span>⚡ 기력 <b id="mEn">0</b></span><span id="mPick"></span></div>
 <div id="mTarget"></div>
+<div id="mSignal">📡 가까운 곳에서 인공지능 코어의 신호가 느껴진다</div>
 <button class="btn small" id="mExit">메뉴 (Q)</button>
 <button class="btn primary" id="mEnBtn">⚡ 기력 충전 문제 (E)</button>
 <div id="mMsg"></div>
@@ -410,7 +416,7 @@ function dirv(){const cp=Math.cos(pl.pitch);return [-Math.sin(pl.yaw)*cp,Math.si
 function ray(){const o=[pl.x,pl.y+1.55,pl.z],d=dirv(),c=o.map(Math.floor),st=d.map(v=>v>0?1:-1),td=d.map(v=>v===0?1e9:Math.abs(1/v)),tm=d.map((v,i)=>v===0?1e9:((v>0?c[i]+1:c[i])-o[i])/v);
 for(let i=0;i<30;i++){const a=tm[0]<tm[1]?(tm[0]<tm[2]?0:2):(tm[1]<tm[2]?1:2);if(tm[a]>4.6)return null;c[a]+=st[a];tm[a]+=td[a];const t=get(c[0],c[1],c[2]);if(t!==AIR)return {x:c[0],y:c[1],z:c[2],t};}return null;}
 function need(t){return PICK.findIndex(p=>p.can>=t);}
-function update(dt){{const now=performance.now();if(now>coreHintT&&cores.length){let best=99;cores.forEach(([x,y,z])=>{if(g[idx(x,y,z)]===5){const d=Math.max(Math.abs(x+.5-pl.x),Math.abs(y+.5-pl.y),Math.abs(z+.5-pl.z));if(d<best)best=d;}});if(best<=4.5){say('...가까운 곳에서 인공지능 코어의 신호가 느껴진다.');coreHintT=now+15000;}else coreHintT=now+1500;}}regen+=dt;if(regen>=12){regen=0;if(S.energy<8){S.energy++;hud();}}{const eb=$('#mEnBtn');if(eb)eb.classList.toggle('on',S.energy<=0);}const sp=4.3;if(keys.ArrowLeft)pl.yaw+=1.9*dt;if(keys.ArrowRight)pl.yaw-=1.9*dt;if(keys.ArrowUp)pl.pitch=Math.min(1.5,pl.pitch+1.5*dt);if(keys.ArrowDown)pl.pitch=Math.max(-1.5,pl.pitch-1.5*dt);
+function update(dt){{const now=performance.now();if(now>coreHintT&&cores.length){let best=99;cores.forEach(([x,y,z])=>{if(g[idx(x,y,z)]===5){const d=Math.max(Math.abs(x+.5-pl.x),Math.abs(y+.5-pl.y),Math.abs(z+.5-pl.z));if(d<best)best=d;}});$('#mSignal').classList.toggle('on',best<=4.5);coreHintT=now+700;}}regen+=dt;if(regen>=12){regen=0;if(S.energy<8){S.energy++;hud();}}{const eb=$('#mEnBtn');if(eb)eb.classList.toggle('on',S.energy<=0);}const sp=4.3;if(keys.ArrowLeft)pl.yaw+=1.9*dt;if(keys.ArrowRight)pl.yaw-=1.9*dt;if(keys.ArrowUp)pl.pitch=Math.min(1.5,pl.pitch+1.5*dt);if(keys.ArrowDown)pl.pitch=Math.max(-1.5,pl.pitch-1.5*dt);
 let f=(keys.KeyW?1:0)-(keys.KeyS?1:0),s=(keys.KeyD?1:0)-(keys.KeyA?1:0);if(f||s){const m=Math.hypot(f,s);f/=m;s/=m;const dx=(-Math.sin(pl.yaw)*f+Math.cos(pl.yaw)*s)*sp*dt,dz=(-Math.cos(pl.yaw)*f-Math.sin(pl.yaw)*s)*sp*dt;let blocked=false;
 if(!hit(pl.x+dx,pl.y,pl.z))pl.x+=dx;else blocked=true;if(!hit(pl.x,pl.y,pl.z+dz))pl.z+=dz;else blocked=true;
 if(blocked&&pl.ground&&!hit(pl.x+dx*3,pl.y+1.05,pl.z+dz*3)&&!hit(pl.x,pl.y+1.05,pl.z))pl.vy=7.4;}
@@ -424,7 +430,7 @@ function setB(b,t){g[idx(b.x,b.y,b.z)]=t;S.dug.push(idx(b.x,b.y,b.z),t);dirty=tr
 function pop(t,col){const d=document.createElement('div');d.textContent=t;d.style.color=col||'#fff';$('#mPop').appendChild(d);setTimeout(()=>d.remove(),1500);}
 function say(t){const now=performance.now();if(now<msgUntil&&$('#mMsg').textContent===t)return;msgUntil=now+2500;const e=$('#mMsg');e.textContent=t;e.classList.add('on');setTimeout(()=>{if(performance.now()>=msgUntil-50)e.classList.remove('on');},2600);}
 function gain(t){const n=Math.random()<PICK[S.tier].dbl?2:1;S.inv[t]+=n;S.mined[t]+=n;S.blocks++;pop('+'+ORE[t].n+' '+n,ORE[t].l);ach('first');if(t===3)ach('gold');if(t===4)ach('dia');if(t===5)ach('core');return n;}
-function breakBlock(b){if(b.t===5){boss(b);return;}if(b.t>5||b.t<0)return;if(Math.random()<QP[b.t]){ask(b);return;}if(b.t===0)S.energy--;setB(b,AIR);gain(b.t);hud();save();}
+function breakBlock(b){if(b.t===5){boss(b);return;}if(b.t>5||b.t<0)return;if(Math.random()<(S.tier>=4?Math.min(QP[b.t],.3):QP[b.t])){ask(b);return;}if(b.t===0)S.energy--;setB(b,AIR);gain(b.t);hud();save();}
 
 /* ---------- 광석 문제 ---------- */
 const ALLP=[1,2,3,4,5],DN={1:'기초',2:'보통',3:'심화'};
