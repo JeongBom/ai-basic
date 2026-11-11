@@ -123,6 +123,8 @@ canvas.ic{width:36px;height:36px;display:inline-block;border:0;background:none;i
 @keyframes sig{from{opacity:.55}to{opacity:1}}
 @media (max-width:700px){#mSignal{top:78px;font-size:13px}}
 #mSignal.strong{color:#ffe65a;border-color:#ffd84a;background:rgba(60,40,0,.8);animation-duration:.5s}
+#mPause,#mQwrap{z-index:6}
+#mine:has(#mQwrap.on) #mEnBtn,#mine:has(#mPause.on) #mEnBtn{display:none}
 
 :root{--bg:#1f1f26;--panel:#2c2c36;--panel2:#3b3b47;--line:#565666;--ink:#eaf0ff;--muted:#9aa7c7;--cyan:#4fd1ff;--yellow:#ffd166;--ok:#3ddc84;--no:#ff6b6b}
 *{box-sizing:border-box}
@@ -417,7 +419,7 @@ function dirv(){const cp=Math.cos(pl.pitch);return [-Math.sin(pl.yaw)*cp,Math.si
 function ray(){const o=[pl.x,pl.y+1.55,pl.z],d=dirv(),c=o.map(Math.floor),st=d.map(v=>v>0?1:-1),td=d.map(v=>v===0?1e9:Math.abs(1/v)),tm=d.map((v,i)=>v===0?1e9:((v>0?c[i]+1:c[i])-o[i])/v);
 for(let i=0;i<30;i++){const a=tm[0]<tm[1]?(tm[0]<tm[2]?0:2):(tm[1]<tm[2]?1:2);if(tm[a]>4.6)return null;c[a]+=st[a];tm[a]+=td[a];const t=get(c[0],c[1],c[2]);if(t!==AIR)return {x:c[0],y:c[1],z:c[2],t};}return null;}
 function need(t){return PICK.findIndex(p=>p.can>=t);}
-function update(dt){{const now=performance.now();if(now>coreHintT&&cores.length){let best=99;cores.forEach(([x,y,z])=>{if(g[idx(x,y,z)]===5){const d=Math.max(Math.abs(x+.5-pl.x),Math.abs(y+.5-pl.y),Math.abs(z+.5-pl.z));if(d<best)best=d;}});const sg=$('#mSignal');sg.classList.toggle('on',best<=4.5);sg.classList.toggle('strong',best<=2.5);sg.textContent=best<=2.5?'📡 아주 강한 신호! 인공지능 코어가 바로 옆 어딘가에 있다':'📡 희미한 신호… 인공지능 코어가 가까이 있다';coreHintT=now+700;}}regen+=dt;if(regen>=12){regen=0;if(S.energy<8){S.energy++;hud();}}{const eb=$('#mEnBtn');if(eb)eb.classList.toggle('on',S.energy<=0);}const sp=4.3;if(keys.ArrowLeft)pl.yaw+=1.9*dt;if(keys.ArrowRight)pl.yaw-=1.9*dt;if(keys.ArrowUp)pl.pitch=Math.min(1.5,pl.pitch+1.5*dt);if(keys.ArrowDown)pl.pitch=Math.max(-1.5,pl.pitch-1.5*dt);
+function update(dt){{const now=performance.now();if(now>coreHintT&&cores.length){let best=99;cores.forEach(([x,y,z])=>{if(g[idx(x,y,z)]===5){const d=Math.max(Math.abs(x+.5-pl.x),Math.abs(y+.5-pl.y),Math.abs(z+.5-pl.z));if(d<best)best=d;}});const sg=$('#mSignal');sg.classList.toggle('on',best<=4.5);sg.classList.toggle('strong',best<=2.5);sg.textContent=best<=2.5?'📡 아주 강한 신호! 인공지능 코어가 바로 옆 어딘가에 있다':'📡 희미한 신호… 인공지능 코어가 가까이 있다';coreHintT=now+700;}}regen+=dt;if(regen>=12){regen=0;if(S.energy<8){S.energy++;hud();}}{const eb=$('#mEnBtn');if(eb)eb.classList.toggle('on',S.energy<=0&&!qOpen&&!forgeOpen&&!reportOpen&&!$('#mPause').classList.contains('on'));}const sp=4.3;if(keys.ArrowLeft)pl.yaw+=1.9*dt;if(keys.ArrowRight)pl.yaw-=1.9*dt;if(keys.ArrowUp)pl.pitch=Math.min(1.5,pl.pitch+1.5*dt);if(keys.ArrowDown)pl.pitch=Math.max(-1.5,pl.pitch-1.5*dt);
 let f=(keys.KeyW?1:0)-(keys.KeyS?1:0),s=(keys.KeyD?1:0)-(keys.KeyA?1:0);if(f||s){const m=Math.hypot(f,s);f/=m;s/=m;const dx=(-Math.sin(pl.yaw)*f+Math.cos(pl.yaw)*s)*sp*dt,dz=(-Math.cos(pl.yaw)*f-Math.sin(pl.yaw)*s)*sp*dt;let blocked=false;
 if(!hit(pl.x+dx,pl.y,pl.z))pl.x+=dx;else blocked=true;if(!hit(pl.x,pl.y,pl.z+dz))pl.z+=dz;else blocked=true;
 if(blocked&&pl.ground&&!hit(pl.x+dx*3,pl.y+1.05,pl.z+dz*3)&&!hit(pl.x,pl.y+1.05,pl.z))pl.vy=7.4;}
@@ -456,7 +458,7 @@ function boss(b){let hp=3;const round=()=>{afterQ=()=>{if(hp>0)round();else open
 function closeQ(){qOpen=false;$('#mQwrap').classList.remove('on');const f=afterQ;afterQ=null;if(f)f();else lock();}
 
 /* ---------- 화면 ---------- */
-function hud(){$('#mEn').textContent=S.energy;const eb=$('#mEnBtn');if(eb)eb.classList.toggle('on',S.energy<=0);$('#mPick').textContent=PICK[S.tier].n;const h=$('#mHot');h.innerHTML='';ORE.forEach((o,i)=>{const d=document.createElement('div');d.className='slot'+(S.inv[i]?'':' zero');d.title=o.n;d.appendChild(icon('o'+i));d.insertAdjacentHTML('beforeend','<b>'+(S.inv[i]||'')+'</b><small>'+o.n+'</small>');h.appendChild(d);});
+function hud(){$('#mEn').textContent=S.energy;const eb=$('#mEnBtn');if(eb)eb.classList.toggle('on',S.energy<=0&&!qOpen&&!forgeOpen&&!reportOpen&&!$('#mPause').classList.contains('on'));$('#mPick').textContent=PICK[S.tier].n;const h=$('#mHot');h.innerHTML='';ORE.forEach((o,i)=>{const d=document.createElement('div');d.className='slot'+(S.inv[i]?'':' zero');d.title=o.n;d.appendChild(icon('o'+i));d.insertAdjacentHTML('beforeend','<b>'+(S.inv[i]||'')+'</b><small>'+o.n+'</small>');h.appendChild(d);});
 const hc=$('#mHand'),x=hc.getContext('2d');x.clearRect(0,0,16,16);x.save();x.translate(16,0);x.scale(-1,1);x.drawImage(icon('p'+S.tier),0,0);x.restore();}
 function lock(){if(cv.requestPointerLock){try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}$('#mPause').classList.remove('on');}
 function loop(ts){if(!isOpen){raf=0;return;}const dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(!qOpen)update(dt);render();raf=requestAnimationFrame(loop);}
