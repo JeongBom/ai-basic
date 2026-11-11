@@ -191,9 +191,9 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 let S={ver:2,core:false,started:false,name:'',energy:12,inv:[0,0,0,0,0,0],mined:[0,0,0,0,0,0],blocks:0,tier:0,ach:{},mineSeed:0,dug:[],oq:[0,0],qm:{},ql:{}};
 try{const sv=JSON.parse(localStorage.getItem('dlMine')||'null');if(sv&&sv.ver===2)S=Object.assign(S,sv);}catch(e){}
 function save(){try{localStorage.setItem('dlMine',JSON.stringify(S))}catch(e){}}
-const ACH={first:['첫 채굴','블록을 처음 캤다'],gold:['금맥 발견','금을 처음 캤다'],dia:['다이아 발견','다이아를 처음 캤다'],core:['전설의 광물','인공지능 코어를 손에 넣었다'],up1:['도구의 시작','곡괭이를 처음 강화했다'],iron:['철기 시대','철 곡괭이를 만들었다'],maxpick:['최종 장비','다이아 곡괭이를 만들었다'],deep:['땅굴 전문가','블록 60개를 캤다'],q10:['열 문제 돌파','광석 문제 10개를 맞혔다'],q30:['서른 문제 돌파','광석 문제 30개를 맞혔다'],perfect:['완벽한 광부','처음 만난 문제 20개 이상을 모두 맞혔다']};
-function ach(k){if(S.ach[k])return;S.ach[k]=1;save();const d=document.createElement('div');d.className='achv';d.innerHTML='<div><small>업적 달성!</small><b>'+ACH[k][0]+'</b><span>'+ACH[k][1]+'</span></div>';d.prepend(ic(k==='dia'?OREIC[4]:k==='core'?OREIC[5]:k==='gold'?OREIC[3]:(k==='first'||k==='deep')?OREIC[0]:PICKIC[Math.min(4,S.tier)],32));$('#achBox').appendChild(d);setTimeout(()=>d.remove(),4300);}
-function checkAch(){const QB=Mine.QB;if(S.blocks>=60)ach('deep');if(S.oq[0]>=10)ach('q10');if(S.oq[0]>=30)ach('q30');const v=Object.values(S.qm);if(v.length>=20&&v.every(x=>x===1))ach('perfect');}
+const ACH={first:['첫 채굴','블록을 처음 캤다'],gold:['금맥 발견','금을 처음 캤다'],dia:['다이아 발견','다이아를 처음 캤다'],core:['전설의 광물','인공지능 코어를 손에 넣었다'],allcore:['코어 수집가','광산의 인공지능 코어 3개를 모두 모았다'],up1:['도구의 시작','곡괭이를 처음 강화했다'],iron:['철기 시대','철 곡괭이를 만들었다'],maxpick:['최종 장비','다이아 곡괭이를 만들었다'],deep:['땅굴 전문가','블록 60개를 캤다'],q10:['열 문제 돌파','광석 문제 10개를 맞혔다'],q30:['서른 문제 돌파','광석 문제 30개를 맞혔다'],perfect:['완벽한 광부','처음 만난 문제 20개 이상을 모두 맞혔다']};
+function ach(k){if(S.ach[k])return;S.ach[k]=1;save();const d=document.createElement('div');d.className='achv';d.innerHTML='<div><small>업적 달성!</small><b>'+ACH[k][0]+'</b><span>'+ACH[k][1]+'</span></div>';d.prepend(ic(k==='dia'?OREIC[4]:(k==='core'||k==='allcore')?OREIC[5]:k==='gold'?OREIC[3]:(k==='first'||k==='deep')?OREIC[0]:PICKIC[Math.min(4,S.tier)],32));$('#achBox').appendChild(d);setTimeout(()=>d.remove(),4300);}
+function checkAch(){const QB=Mine.QB;if(S.mined[5]>=3)ach('allcore');if(S.blocks>=60)ach('deep');if(S.oq[0]>=10)ach('q10');if(S.oq[0]>=30)ach('q30');const v=Object.values(S.qm);if(v.length>=20&&v.every(x=>x===1))ach('perfect');}
 
 const ORE=[{n:'돌',c:'#8f8f8f',d:'#5f5f66',l:'#bcbcc2'},{n:'석탄',c:'#3a3a42',d:'#1b1b20',l:'#62626c'},{n:'철',c:'#d9b28f',d:'#9c7556',l:'#f4dfcb'},{n:'금',c:'#f5d142',d:'#b98d14',l:'#fff3a8'},{n:'다이아',c:'#5ee6e0',d:'#1f9a9a',l:'#d2fffb'},{n:'AI 코어',c:'#4fd1ff',d:'#5b2fbd',l:'#dff7ff'}];
 const PICK=[{n:'나무 곡괭이',c:'#9b7447',can:1,dbl:0,cost:null},{n:'돌 곡괭이',c:'#9a9aa2',can:2,dbl:.05,cost:{0:6}},{n:'철 곡괭이',c:'#e6e6ea',can:4,dbl:.10,cost:{2:4,1:4}},{n:'금 곡괭이',c:'#f6d743',can:4,dbl:.15,cost:{3:3,2:4}},{n:'다이아 곡괭이',c:'#5ee6e0',can:5,dbl:.20,cost:{4:3,3:3}}];
@@ -210,7 +210,7 @@ function icon(k,px){return ic(k[0]==='p'?PICKIC[+k.slice(1)]:OREIC[+k.slice(1)],
 const Mine=(()=>{
 const X=21,Y=11,Z=21,AIR=-1,BED=7,CH=[8,12,4,6,8,12];
 const BN=['돌','석탄 광석','철 광석','금 광석','다이아 광석','인공지능 코어'],JO=['돌을','석탄을','철을','금을','다이아를','AI 코어를'],QP=[.15,.35,.55,.8,.95,1];
-const P={coal:.07,iron:.06,gold:.035,dia:.022,vein:.45,cores:4};let cores=[],coreHintT=0;
+const P={coal:.07,iron:.06,gold:.035,dia:.022,vein:.45,cores:3};let cores=[],coreHintT=0;
 /* 광석을 캘 때 나오는 문제. 광석이 귀할수록 뒤쪽 내용이다. */
 const QB={1:[{q:"퍼셉트론에서 입력값마다 곱해 주는 값은?",o:["가중치", "편향", "에포크", "레이블"],e:"퍼셉트론은 입력값마다 가중치를 곱해 더하고, 편향을 더한 뒤 활성화 함수에 넣는다.",pg:"91쪽 퍼셉트론",sl:[1, 3],d:1},
 {q:"퍼셉트론은 무엇의 작동 방식을 흉내 낸 것일까?",o:["뇌의 신경 세포(뉴런)", "컴퓨터의 기억 장치", "인터넷 검색 엔진", "계산기의 덧셈 회로"],e:"퍼셉트론은 뉴런의 작동 방식을 모방한 계산 단위다.",pg:"91쪽 퍼셉트론",sl:[1, 2],d:1},
