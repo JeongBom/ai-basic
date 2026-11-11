@@ -132,6 +132,10 @@ table.hm.le tr:not(.lerow) td{opacity:.22}
 .legend2 i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .legend2 i.dot{border-radius:50%}
 .r2t td:first-child{white-space:nowrap;font-weight:700}
+.frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 4px}
+.frac>span:first-child{border-bottom:1.5px solid var(--ink);padding:0 8px 2px}
+.frac>span:last-child{padding:2px 8px 0}
+.fm{font-size:16.5px;margin:10px 0;line-height:1.5}
 .sel2{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:15px;margin:6px 0}
 .sel2 label{display:flex;gap:6px;align-items:center;max-width:100%;min-width:0;white-space:nowrap}
 .sel2 select{font-family:inherit;font-size:15px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;min-width:0;flex:1 1 auto}
@@ -547,6 +551,7 @@ print('결정 계수(R^2) = ', r2_score(y_test, y_pred))</pre></div><details cla
 <div class="two">
 <div class="sidebox"><b>r2_score(y_test, y_pred)</b>회귀 모델의 결정 계수를 계산하는 데 사용하는 함수이다. 여기서 y_test는 테스트 데이터의 <b>실제</b> 종속 변숫값이고, y_pred는 모델이 <b>예측</b>한 종속 변숫값으로 함수를 호출하여 결정 계수를 출력할 수 있다. 결정 계수는 2단원 87쪽에서 배웠다.</div>
 <div class="sidebox"><b>결정 계수(R²) 읽기</b><ul style="margin:0;padding-left:18px"><li>R²가 0에 가까울수록 성능이 <button class="blank" data-a="낮음" aria-label="빈칸 — 눌러서 답 보기">____</button></li><li>R²가 1에 가까울수록 성능이 <button class="blank" data-a="높음" aria-label="빈칸 — 눌러서 답 보기">____</button></li></ul></div></div>
+<details><summary>참고 — 결정 계수(R²)를 계산하는 식</summary><p class="fm">R² = 1 − <span class="frac"><span>(실제 값 − 예측값)²을 모두 더한 값</span><span>(실제 값 − 실제 값의 평균)²을 모두 더한 값</span></span></p><ul><li>위쪽은 <b>모델의 예측이 실제와 벗어난 정도</b>이다. 예측이 실제와 똑같으면 0이 되어 R² = 1이다.</li><li>아래쪽은 <b>모든 데이터를 평균 하나로 예측했을 때 벗어난 정도</b>이다. 모델이 평균으로 예측하는 것과 다를 바 없으면 위아래가 같아져 R² = 0이다.</li></ul><p>이 모델은 테스트 데이터 330개로 계산하면 1 − 4,666 ÷ 22,601 = <b>0.79</b>이다. r2_score( ) 함수가 이 계산을 해 준다.</p></details>
 <p><b>❷ 테스트 데이터로 평가하기</b> predict( ) 함수를 사용하여 테스트 데이터를 넣으면 예측 기대 수명이 출력된다.</p>
 <div class="code"><div class="code-head"><span>❷ 실제와 예측 비교</span><button class="reveal-all">빈칸 모두 보기</button></div><pre>Y_prediction = y_pred.flatten()
 for i in range(6):
