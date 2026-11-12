@@ -160,7 +160,7 @@ input[type=text]{font-size:16px;background:#0b101c;color:var(--ink);border:1px s
 <li>문제는 2단원 딥러닝 전체에서 무작위로 나온다. 귀한 광물일수록 어렵다. 돌과 석탄은 기초, 철은 기초와 보통, 금은 보통, 다이아는 보통과 심화, 인공지능 코어는 심화 문제다.</li>
 <li><b>목표</b>: 다이아 곡괭이로 깊은 곳에 숨은 <b>인공지능 코어</b>를 찾아 캔다. 코어가 깨어나 내는 심화 문제 3개를 맞히면 엔딩이다.</li>
 <li><b>곡괭이</b> 등급마다 캘 수 있는 광석이 다르다. 강화할 때는 시험 문제를 맞혀야 하고, 좋은 곡괭이일수록 문제가 어렵다.</li>
-<li>메뉴(Q)의 <b>보고서</b>에 처음 만난 문제를 맞힌 비율이 기록된다. 문제는 모두 145개이고 처음 만났을 때의 결과만 점수에 들어간다. <b>끝나면 보고서를 캡처해서 제출한다.</b></li></ul>
+<li>메뉴(Q)의 <b>보고서</b>에 처음 만난 문제를 맞힌 비율이 기록된다. 문제는 모두 170개이고(숫자가 매번 바뀌는 계산 문제 25개 포함) 처음 만났을 때의 결과만 점수에 들어간다. <b>끝나면 보고서를 캡처해서 제출한다.</b></li></ul>
 <div class="row"><input type="text" id="pname" placeholder="이름 또는 학번" maxlength="20"><button class="btn primary" id="startBtn">광산으로 들어가기 ▶</button></div></div></div>
 <div id="mine">
 <canvas id="mineCv"></canvas>
@@ -359,6 +359,77 @@ const QB={1:[{q:"퍼셉트론에서 입력값마다 곱해 주는 값은?",o:["�
 {q:"워드 임베딩의 숫자(0.2, 0.4 같은 값)는 누가 정할까?",o:["원-핫 인코딩을 딥러닝으로 학습해서 만든다", "사람이 사전을 보고 하나씩 정해서 적는다", "단어의 글자 수와 획수로 계산해서 정한다", "단어가 글에 나온 순서대로 번호를 붙인다"],e:"사람이 정하지 않는다. 학습 결과 비슷한 의미의 단어가 가까운 곳에 놓인다.",pg:"115쪽 워드 임베딩",sl:[5, 5],d:3},
 {q:"학습한 글에서 \"커피\" 다음에 \"마시다\"가 400번, \"먹다\"가 50번, \"타다\"가 5번 나왔다. 생성형 언어 모델이 \"커피\" 다음에 가장 흔한 문장을 만들려면 어떤 단어를 고를까?",o:["확률이 가장 높은 \"마시다\"", "가장 적게 나온 \"타다\"", "세 단어를 모두 쓴다", "사전 순서로 \"먹다\""],e:"생성형 언어 모델은 다음에 올 단어의 확률을 예측해 고른다. 가장 흔한 문장을 원하면 확률이 가장 높은 단어를 고른다.",pg:"119쪽 생성형 언어 모델",sl:[5, 10],d:3},
 {q:"\"밥\"이나 \"버스\" 다음 단어를 빈도수로 세어 예측하는 생성형 언어 모델은 어느 언어 이해 방식의 원리를 쓸까?",o:["빈도수 기반 방식", "의미론적 접근 방식", "합성곱 연산", "음성 합성"],e:"어떤 단어 다음에 어떤 단어가 몇 번 왔는지 세어 확률을 구하는 것은 빈도수 기반 방식이다. 실제 모델은 임베딩도 함께 쓴다.",pg:"119쪽 생성형 언어 모델",sl:[5, 10],d:3}]};
+/* ---------- 숫자가 매번 바뀌는 문제 틀 ---------- */
+const QT=(()=>{
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const sg=n=>n<0?'−'+(-n):String(n);           // 음수 기호
+const pr=n=>n<0?'(−'+(-n)+')':String(n);       // 식 안의 음수는 괄호
+const fx=(n,d)=>{const s=n.toFixed(d);return sg(+s)===String(+s)?s:s.replace('-','−');};
+function opts(correct,ds,fallback){const out=[String(correct)];for(const d of ds){const s=String(d);if(!out.includes(s))out.push(s);if(out.length===4)break;}let k=1;while(out.length<4){const s=fallback?fallback(k):String(correct)+'…'+k;if(!out.includes(s))out.push(s);k++;}return out;}
+const EUL=n=>{const d=String(Math.abs(n)).replace(/\.0+$/,'').slice(-1);return '0136789'.includes(d)?'을':'를';};
+const SP=['세토사','버시컬러','버지니카'];
+const T=[];
+// 1 퍼셉트론 계산값
+T.push({id:'perc_sum',pt:1,d:2,pg:'91쪽 퍼셉트론',sl:[1,3],gen(){const x1=ri(1,5),x2=ri(1,5);let w1=ri(-3,3),w2=ri(-3,3);if(!w1)w1=1;if(!w2)w2=-1;const b=ri(-5,5),v=x1*w1+x2*w2+b;
+return {q:'입력 ('+x1+', '+x2+'), 가중치 ('+sg(w1)+', '+sg(w2)+'), 편향 '+sg(b)+'인 퍼셉트론의 계산값(가중합 + 편향)은?',o:opts(sg(v),[sg(v-b),sg(x1*w2+x2*w1+b),sg(x1*w1+x2*w2-b)],k=>sg(v+k)),e:'('+x1+' × '+pr(w1)+') + ('+x2+' × '+pr(w2)+') + '+pr(b)+' = '+sg(v)+'이다.'};}});
+// 2 퍼셉트론 출력(계단 함수)
+T.push({id:'perc_out',pt:1,d:2,pg:'91쪽 퍼셉트론',sl:[1,4],gen(){const x1=ri(1,6),x2=ri(1,6);let w1=ri(-2,2),w2=ri(-2,2);if(!w1)w1=1;if(!w2)w2=1;const b=ri(-8,4),v=x1*w1+x2*w2+b,out=v>=0?1:0;
+const f=(val,o)=>'계산값 '+sg(val)+', 출력 '+o;return {q:'가중치가 '+sg(w1)+', '+sg(w2)+'이고 편향이 '+sg(b)+'인 퍼셉트론에 입력 ('+x1+', '+x2+')를 넣으면? (계단 함수)',o:opts(f(v,out),[f(v,1-out),f(v-b,(v-b)>=0?1:0),f(v+b,(v+b)>=0?1:0)],k=>f(v+k,(v+k)>=0?1:0)),e:'('+x1+' × '+pr(w1)+') + ('+x2+' × '+pr(w2)+') + '+pr(b)+' = '+sg(v)+'이고, '+(out?'0 이상이므로 출력은 1':'0보다 작으므로 출력은 0')+'이다.'};}});
+// 3 계단 함수
+T.push({id:'step',pt:1,d:1,pg:'91쪽 계단 함수',sl:[1,3],gen(){let v=ri(-7,7)/2;const out=v>=0?1:0;return {q:'계단 함수는 0 이상이면 1, 아니면 0을 출력한다. '+sg(v)+EUL(v)+' 넣으면 출력은?',o:opts(String(out),[String(1-out),sg(v),sg(-v)],k=>String(k+1)),e:sg(v)+'은(는) '+(out?'0 이상이므로 출력은 1':'0보다 작으므로 출력은 0')+'이다.'};}});
+// 4 렐루
+T.push({id:'relu',pt:1,d:1,pg:'92쪽 활성화 함수',sl:[1,6],gen(){const a=-ri(1,9),b=ri(1,9);return {q:'렐루(ReLU) 함수에 '+sg(a)+EUL(a)+' 넣으면 얼마가 나오고, '+b+EUL(b)+' 넣으면 얼마가 나올까?',o:['0과 '+b,sg(a)+'과 '+b,'0과 0',(-a)+'과 '+b],e:'렐루 함수는 음수는 0으로 만들고 0 이상은 그대로 내보낸다. '+sg(a)+' → 0, '+b+' → '+b+'.'};}});
+// 5 소프트맥스 예측
+T.push({id:'softmax_pred',pt:1,d:1,pg:'93쪽 오차 계산',sl:[1,9],gen(){let a=ri(2,90),b=ri(2,90),c=ri(2,90);const s=a+b+c;const p=[a,b,c].map(x=>Math.round(x/s*100));p[2]=100-p[0]-p[1];const mx=Math.max(...p);if(p.filter(x=>x===mx).length>1)p[0]=mx+1,p[1]=100-p[0]-p[2];const i=p.indexOf(Math.max(...p));const txt=SP.map((n,k)=>n+' '+(p[k]/100).toFixed(2)).join(', ');
+return {q:'출력층(소프트맥스)이 ('+txt+')를 냈다. 모델의 예측은?',o:[SP[i]].concat(SP.filter((_,k)=>k!==i)).concat(['알 수 없다']),e:'소프트맥스의 출력은 각 종류일 확률이고 합은 1이다. 가장 큰 '+(p[i]/100).toFixed(2)+'인 '+SP[i]+'가 예측이다.'};}});
+// 6 원-핫(붓꽃)
+T.push({id:'onehot_sp',pt:2,d:1,pg:'93쪽 원-핫 인코딩',sl:[1,9],gen(){const i=ri(0,2);const vec=k=>'('+[0,0,0].map((_,j)=>j===k?1:0).join(', ')+')';return {q:'세토사·버시컬러·버지니카 순서일 때 '+SP[i]+'의 레이블을 원-핫 인코딩하면?',o:[vec(i)].concat([0,1,2].filter(k=>k!==i).map(vec)).concat(['(1, 1, 1)']),e:'정답인 종의 자리만 1, 나머지는 0으로 나타낸다.'};}});
+// 7 원-핫(손 글씨) 벡터 → 정답
+T.push({id:'onehot_digit',pt:2,d:2,pg:'98쪽 원-핫 인코딩',sl:[2,10],gen(){const k=ri(0,9);const vec='['+Array.from({length:10},(_,j)=>j===k?'1':'0').join(', ')+']';return {q:'to_categorical(y_train)의 결과 중 하나가 '+vec+'이다. 이 이미지의 정답 숫자는?',o:opts(String(k),[String((k+1)%10),String((k+9)%10),'10']),e:'0부터 세어 '+(k+1)+'번째 자리('+k+'의 자리)만 1이므로 정답은 '+k+'이다.'};}});
+// 8 평균제곱오차 값
+T.push({id:'mse',pt:2,d:3,pg:'94쪽 평균제곱오차',sl:[1,10],gen(){const act=[ri(60,95),ri(60,95),ri(60,95)];const er=[pick([0,5,10]),pick([5,10,15]),pick([0,5,10,20])];const pred=act.map((a,i)=>a+(Math.random()<.5?er[i]:-er[i]));const sq=er.map(e=>e*e),mse=sq.reduce((a,b)=>a+b,0)/3,mae=er.reduce((a,b)=>a+b,0)/3;
+return {q:'실젯값 '+act.join(', ')+EUL(act[2])+' '+pred.join(', ')+(EUL(pred[2])==='을'?'으로':'로')+' 예측했다. 평균제곱오차는?',o:opts('약 '+fx(mse,2),['약 '+fx(mae,2),String(sq.reduce((a,b)=>a+b,0)),'약 '+fx(mse/3,2)],k=>'약 '+fx(mse+k*7,2)),e:'오차 '+er.join(', ')+EUL(er[2])+' 제곱해 더한 뒤 3으로 나눈다. ('+sq.join(' + ')+') ÷ 3 ≒ '+fx(mse,2)+'이다.'};}});
+// 9 한 에포크의 가중치 수정 횟수
+T.push({id:'batch_updates',pt:2,d:2,pg:'93쪽 배치 사이즈',sl:[1,8],gen(){const b=pick([10,20,25,30,50,100]);const n=b*ri(3,12);return {q:'데이터 '+n+'개를 배치 사이즈 '+b+'으로 나누어 넣으면 한 에포크 동안 가중치를 몇 번 수정할까?',o:opts(String(n/b)+'번',[String(n-b)+'번',String(b)+'번',String(n)+'번'],k=>String(n/b+k)+'번'),e:'배치마다 오차를 계산해 가중치를 고치므로 '+n+' ÷ '+b+' = '+(n/b)+'번이다.'};}});
+// 10 여러 에포크의 총 수정 횟수
+T.push({id:'batch_total',pt:2,d:3,pg:'93쪽 배치 사이즈·에포크',sl:[1,8],gen(){const b=pick([10,20,25,50]);const n=b*ri(3,10),e=ri(2,6),per=n/b;return {q:'데이터 '+n+'개를 배치 사이즈 '+b+'으로 '+e+' 에포크 학습하면 가중치는 모두 몇 번 수정될까?',o:opts(String(per*e)+'번',[String(per)+'번',String(e)+'번',String(per+e)+'번'],k=>String(per*e+k)+'번'),e:'한 에포크에 '+n+' ÷ '+b+' = '+per+'번, '+e+' 에포크이므로 '+per+' × '+e+' = '+(per*e)+'번이다.'};}});
+// 11 정규화
+T.push({id:'normalize',pt:2,d:2,pg:'98쪽 정규화',sl:[2,9],gen(){const x=ri(10,250);const r=(x/255).toFixed(2);return {q:'픽셀 값 '+x+EUL(x)+' 최댓값 255로 나눠 정규화하면 약 얼마일까?',o:opts('약 '+r,['약 '+(x/100).toFixed(2),'약 '+(255/x).toFixed(2),String(x)],k=>'약 '+(x/255+k*.1).toFixed(2)),e:x+' ÷ 255 ≒ '+r+'이다. 정규화하면 모든 값이 0~1 사이가 된다.'};}});
+// 12 이미지 한 장의 숫자 개수
+T.push({id:'pixels',pt:3,d:2,pg:'102쪽 이미지 데이터',sl:[3,2],gen(){const w=pick([16,20,24,28,32,40,50,64]);const h=w;const color=Math.random()<.5;const n=w*h*(color?3:1);
+return color?{q:'컬러 이미지는 픽셀마다 빨강, 초록, 파랑 세 값을 저장한다. '+w+'×'+h+' 픽셀 컬러 이미지 한 장은 숫자 몇 개로 저장될까?',o:opts(n.toLocaleString()+'개',[(w*h).toLocaleString()+'개',(w*h*2).toLocaleString()+'개',((w+h)*3).toLocaleString()+'개'],k=>(n+k*10).toLocaleString()+'개'),e:w+' × '+h+' × 3 = '+n.toLocaleString()+'개다.'}
+:{q:w+'×'+h+' 픽셀 흑백 이미지 한 장은 숫자 몇 개로 저장될까? (픽셀마다 밝기 값 하나)',o:opts(n.toLocaleString()+'개',[(w+h).toLocaleString()+'개',(n*3).toLocaleString()+'개','255개'],k=>(n+k*10).toLocaleString()+'개'),e:w+' × '+h+' = '+n.toLocaleString()+'개다. 한 줄로 펼치면 입력층 노드 수가 된다.'};}});
+// 13 합성곱 출력 크기
+T.push({id:'conv_out',pt:3,d:3,pg:'105쪽 합성곱층',sl:[3,8],gen(){const n=ri(4,9),k=pick([2,3]),o=n-k+1;const sq=v=>v+'×'+v;return {q:n+'×'+n+' 입력에 '+k+'×'+k+' 필터를 한 칸씩 옮기며 합성곱 연산을 하면 출력 크기는?',o:opts(sq(o),[sq(n),sq(k),sq(n-k)],j=>sq(o+j)),e:'필터가 놓일 수 있는 자리가 가로 '+o+', 세로 '+o+'이므로 '+sq(o)+'이다. (입력 '+n+' − 필터 '+k+' + 1)'};}});
+// 14 합성곱 연산 값
+T.push({id:'conv_val',pt:3,d:3,pg:'105쪽 합성곱층',sl:[3,8],gen(){const inp=Array.from({length:9},()=>ri(0,3));const fil=Array.from({length:9},()=>ri(0,1));let s=0;for(let i=0;i<9;i++)s+=inp[i]*fil[i];const row=a=>[0,3,6].map(i=>a.slice(i,i+3).join(' ')).join(' / ');const tot=inp.reduce((a,b)=>a+b,0);
+return {q:'입력 영역 ['+row(inp)+']에 필터 ['+row(fil)+']를 적용해 같은 자리끼리 곱하고 모두 더하면 출력값은?',o:opts(String(s),[String(s+1),String(s-1<0?s+2:s-1),String(tot)],k=>String(s+k+2)),e:'필터가 1인 자리의 입력값만 남아 더해진다. 결과는 '+s+'이다.'};}});
+// 15 최댓값 풀링
+T.push({id:'pool_max',pt:3,d:1,pg:'105쪽 풀링층',sl:[3,9],gen(){const v=Array.from({length:4},()=>ri(0,9));const mx=Math.max(...v),mn=Math.min(...v),sum=v.reduce((a,b)=>a+b,0);return {q:'2×2 영역의 값이 '+v.join(', ')+'일 때 최댓값 풀링의 출력은?',o:opts(String(mx),[String(mn),String(sum),(sum/4).toFixed(1)],k=>String(mx+k)),e:'최댓값 풀링은 영역에서 가장 큰 값 '+mx+' 하나만 남긴다.'};}});
+// 16 풀링 후 크기
+T.push({id:'pool_size',pt:3,d:2,pg:'105쪽 풀링층',sl:[3,9],gen(){const n=pick([4,6,8,10,12,16,20]);const sq=v=>v+'×'+v;return {q:n+'×'+n+' 특징 맵에 2×2 최댓값 풀링을 하면 크기는?',o:opts(sq(n/2),[sq(n),sq(n-2),sq(n/4)],k=>sq(n/2+k)),e:'2×2 영역마다 값 하나만 남기므로 가로·세로가 절반이 되어 '+sq(n/2)+'이다. 칸 수는 4분의 1이 된다.'};}});
+// 17 RGB 색
+T.push({id:'rgb',pt:3,d:1,pg:'102쪽 컬러 이미지',sl:[3,2],gen(){const tbl=[['(255, 0, 0)','빨강'],['(0, 255, 0)','초록'],['(0, 0, 255)','파랑'],['(255, 255, 0)','노랑'],['(0, 0, 0)','검은색'],['(255, 255, 255)','흰색']];const i=ri(0,5);const others=tbl.filter((_,k)=>k!==i).sort(()=>Math.random()-.5).slice(0,3).map(t=>t[1]);return {q:'RGB 채널에서 '+tbl[i][0]+'은 무슨 색일까?',o:[tbl[i][1]].concat(others),e:'빨강·초록·파랑의 밝기를 섞어 색을 만든다. 모두 0이면 검은색, 모두 255면 흰색, 빨강과 초록을 섞으면 노랑이다.'};}});
+// 18 흑백 픽셀 값의 색
+T.push({id:'gray',pt:3,d:1,pg:'96쪽 흑백 이미지',sl:[2,6],gen(){const v=pick([0,255,ri(20,235)]);const c=v===0?'검은색':v===255?'흰색':'회색';return {q:'흑백 이미지의 픽셀 값이 '+v+'이면 어떤 색일까?',o:[c].concat(['검은색','흰색','회색'].filter(x=>x!==c)).concat(['빨간색']),e:'0은 검은색, 255는 흰색이고 그 사이는 회색이다. 0에 가까울수록 짙은 회색이다.'};}});
+// 19 입력·출력 노드 수
+T.push({id:'io_nodes',pt:1,d:2,pg:'92쪽 딥러닝의 구조',sl:[1,5],gen(){const f=ri(2,8);let c=ri(2,6);if(c===f)c=f+1;const s=(a,b)=>'입력 '+a+'개, 출력 '+b+'개';return {q:'특징이 '+f+'개이고 '+c+'가지 종류 중 하나를 고르는 분류 신경망의 입력층과 출력층 노드 수는?',o:opts(s(f,c),[s(c,f),s(f,1),s(f*c,c)],k=>s(f+k,c)),e:'입력 노드 수는 특징의 수 '+f+', 출력 노드 수는 종류의 수 '+c+'이다. 은닉층은 사람이 정한다.'};}});
+// 20 원-핫 벡터 길이
+T.push({id:'onehot_len',pt:4,d:2,pg:'115쪽 원-핫 인코딩',sl:[5,4],gen(){const n=ri(5,12);const s=(a,b)=>'길이 '+a+', 1은 '+b+'개';return {q:'단어 '+n+'개로 이루어진 문장을 원-핫 인코딩하면 단어 하나의 벡터 길이와 그 안의 1의 개수는?',o:[s(n,1),s(n,n),s(1,1),s(2,n)],e:'원-핫 인코딩의 고정 길이는 단어의 개수와 같고, 해당 단어 자리만 1이다.'};}});
+// 21 다음 단어 확률
+T.push({id:'next_word',pt:4,d:2,pg:'119쪽 생성형 언어 모델',sl:[5,10],gen(){const W=pick(['밥','버스','커피']);const ws=['먹다','타다','마시다'];let c=[ri(0,400),ri(0,400),ri(0,400)];const mx=Math.max(...c);if(c.filter(x=>x===mx).length>1)c[0]=mx+ri(1,50);const i=c.indexOf(Math.max(...c));
+return {q:'학습한 글에서 "'+W+'" 다음에 "먹다"가 '+c[0]+'번, "타다"가 '+c[1]+'번, "마시다"가 '+c[2]+'번 나왔다. 생성형 언어 모델이 "'+W+'" 다음에 가장 높은 확률로 고를 단어는?',o:['"'+ws[i]+'"'].concat(ws.filter((_,k)=>k!==i).map(w=>'"'+w+'"')).concat(['세 단어의 확률이 같다']),e:'생성형 언어 모델은 다음에 올 단어의 확률을 예측한다. 가장 많이 나온 "'+ws[i]+'"의 확률이 가장 높다.'};}});
+// 22 단어 주머니 분류
+T.push({id:'bow',pt:4,d:2,pg:'116쪽 빈도수 기반 방식',sl:[5,6],gen(){const cat=[['연예',['배우','공연','가수']],['경제',['투자','성장','경제','기업']],['스포츠',['선수','경기','팀','승리']]];const i=ri(0,2);const parts=[];cat.forEach((c,k)=>{const ws=c[1].slice().sort(()=>Math.random()-.5).slice(0,2);ws.forEach(w=>parts.push([w,k===i?ri(6,15):ri(0,3)]));});parts.sort(()=>Math.random()-.5);
+return {q:'어떤 기사에 '+parts.map(p=>'"'+p[0]+'" '+p[1]+'번').join(', ')+' 나왔다. 빈도수 기반 방식으로 분류하면?',o:[cat[i][0]].concat(cat.filter((_,k)=>k!==i).map(c=>c[0])).concat(['알 수 없다']),e:cat[i][1].join('·')+' 같은 단어의 빈도수가 높으므로 '+cat[i][0]+' 기사로 분류된다.'};}});
+// 23 음소 개수
+T.push({id:'phoneme',pt:4,d:1,pg:'110쪽 음소',sl:[4,2],gen(){const tbl=[['산',3,'ㅅ, ㅏ, ㄴ'],['강',3,'ㄱ, ㅏ, ㅇ'],['나',2,'ㄴ, ㅏ'],['바다',4,'ㅂ, ㅏ, ㄷ, ㅏ'],['하늘',5,'ㅎ, ㅏ, ㄴ, ㅡ, ㄹ'],['꿈',3,'ㄲ, ㅜ, ㅁ'],['소리',4,'ㅅ, ㅗ, ㄹ, ㅣ'],['별',3,'ㅂ, ㅕ, ㄹ']];const t=pick(tbl);return {q:'음소는 언어의 가장 작은 소리 단위다. 예를 들어 "문"은 ㅁ, ㅜ, ㄴ 세 음소다. "'+t[0]+'"은(는) 몇 개의 음소로 이루어질까?',o:opts(t[1]+'개',[(t[1]-1)+'개',(t[1]+1)+'개',t[0].length+'개'],k=>(t[1]+k+1)+'개'),e:'"'+t[0]+'"은(는) '+t[2]+'의 '+t[1]+'개 음소로 이루어진다.'};}});
+// 24 과적합 판단
+T.push({id:'overfit',pt:2,d:2,pg:'101쪽 정확도 비교',sl:[2,15],gen(){const tr=(ri(95,100)/100).toFixed(3),te=(ri(70,88)/100).toFixed(3);return {q:'어떤 모델의 훈련 데이터 정확도는 '+tr+', 테스트 데이터 정확도는 '+te+'이다. 이 상태를 무엇이라 할까?',o:['훈련 데이터를 외워 새 데이터는 못 맞히는 과적합','학습이 전혀 되지 않아 아무것도 못 맞히는 상태','픽셀 값이 정규화되지 않아 생긴 계산 오류','훈련과 테스트를 모두 잘 맞히는 가장 좋은 상태'],e:'훈련 정확도는 높은데 테스트 정확도가 크게 낮으면 훈련 데이터를 외운 과적합이다.'};}});
+// 25 데이터 형태
+T.push({id:'shape',pt:2,d:1,pg:'96쪽 데이터 수집',sl:[2,5],gen(){const n=pick([60000,10000,20000,5000,1000]);const s=n.toLocaleString();return {q:'X.shape를 출력하니 ('+n+', 28, 28)이 나왔다. 무슨 뜻일까?',o:['28×28 픽셀 이미지가 '+s+'장 있다',s+'×28 크기의 이미지가 28장 있다','28개의 특징을 가진 데이터가 '+s+'개 있다','레이블이 '+s+'개 있고 이미지는 없다'],e:'('+n+', 28, 28)은 28×28 픽셀 이미지가 '+s+'장 있다는 뜻이다.'};}});
+return T;})();
 let g=null,cv,gl,prog,loc={},vbo,ovbo,nVert=0,isOpen=false,locked=false,qOpen=false,raf=0,last=0,target=null,brk=0,holding=false,dirty=true,msgUntil=0,lastQ={},regen=0,afterQ=null,forgeOpen=false,reportOpen=false;
 const pl={x:10.5,y:4,z:10.5,yaw:0,pitch:0,vy:0,ground:false},keys={};
 const idx=(x,y,z)=>(y*Z+z)*X+x;
@@ -438,9 +509,9 @@ function breakBlock(b){if(b.t===5){boss(b);return;}if(b.t>5||b.t<0)return;if(Mat
 /* ---------- 광석 문제 ---------- */
 const ALLP=[1,2,3,4,5],DN={1:'기초',2:'보통',3:'심화'};
 function quiz(t,title,sub,onDone,pools,dset){qOpen=true;holding=false;for(const k in keys)keys[k]=false;if(document.exitPointerLock)document.exitPointerLock();
-let cands=[];(pools||ALLP).forEach(pt=>{if(QB[pt])QB[pt].forEach((q,i)=>{if(!dset||dset.includes(q.d))cands.push(pt+'-'+i);});});if(!cands.length)(pools||ALLP).forEach(pt=>{if(QB[pt])QB[pt].forEach((q,i)=>cands.push(pt+'-'+i));});const pick=arr=>arr[Math.floor(Math.random()*arr.length)];const unseen=cands.filter(k=>S.qm[k]===undefined),wrong=cands.filter(k=>S.ql[k]===0&&k!==lastQ[t]),rest=cands.filter(k=>k!==lastQ[t]);const QK=wrong.length?pick(wrong):unseen.length?pick(unseen):pick(rest.length?rest:cands);lastQ[t]=QK;const [pt,qi]=QK.split('-').map(Number),Q=QB[pt][qi],ord=[0,1,2,3].sort(()=>Math.random()-.5);
+let cands=[];(pools||ALLP).forEach(pt=>{if(QB[pt])QB[pt].forEach((q,i)=>{if(!dset||dset.includes(q.d))cands.push(pt+'-'+i);});});QT.forEach(t=>{if((pools||ALLP).includes(t.pt)&&(!dset||dset.includes(t.d)))cands.push('T:'+t.id);});if(!cands.length)(pools||ALLP).forEach(pt=>{if(QB[pt])QB[pt].forEach((q,i)=>cands.push(pt+'-'+i));});const pick=arr=>arr[Math.floor(Math.random()*arr.length)];const unseen=cands.filter(k=>S.qm[k]===undefined),wrong=cands.filter(k=>S.ql[k]===0&&k!==lastQ[t]),rest=cands.filter(k=>k!==lastQ[t]);const QK=wrong.length?pick(wrong):unseen.length?pick(unseen):pick(rest.length?rest:cands);lastQ[t]=QK;let pt,qi,Q;if(QK.startsWith('T:')){const tp=QT.find(x=>x.id===QK.slice(2)),gq=tp.gen();Q={q:gq.q,o:gq.o,e:gq.e,pg:tp.pg,sl:tp.sl,d:tp.d};pt=tp.pt;qi=-1;}else{[pt,qi]=QK.split('-').map(Number);Q=QB[pt][qi];}const ord=[0,1,2,3].sort(()=>Math.random()-.5);
 const box=$('#mQ');box.innerHTML='<div class="gtitle"><b><span id="mQi"></span> '+title+'</b></div><p class="need">'+sub+' <span class="ref" style="border-color:#8a8a96;color:#55555f">'+(TOPIC[pt]||'')+' · '+DN[Q.d]+'</span></p><p class="qq">'+Q.q+'</p><div class="qopts"></div><div class="qhint"><button class="btn small" id="mQhint">힌트: 어디를 볼까?</button><div id="mQhintBox"></div></div><div class="qfb"></div>';
-$('#mQhint').onclick=()=>{$('#mQhintBox').innerHTML=hintHtml(pt,qi,Q.pg);$('#mQhint').style.display='none';};
+$('#mQhint').onclick=()=>{$('#mQhintBox').innerHTML=hintHtml(Q.sl,Q.pg);$('#mQhint').style.display='none';};
 if(t>0)$('#mQi').appendChild(icon('o'+t,28));else $('#mQi').textContent='⚡';const og=box.querySelector('.qopts');let done=false;
 const finish=ok=>{if(done)return;done=true;S.oq[1]++;if(ok)S.oq[0]++;if(S.qm[QK]===undefined)S.qm[QK]=ok?1:0;S.ql[QK]=ok?1:0;S.streak=ok?(S.streak||0)+1:0;og.querySelectorAll('button').forEach(bt=>{bt.disabled=true;if(+bt.dataset.i===0)bt.classList.add('ok');});
 const msg=onDone(ok),fbx=box.querySelector('.qfb');fbx.className='qfb '+(ok?'ok':'no');fbx.innerHTML=msg+'<br>'+Q.e+(ok?'':' <span class="ref">교과서 '+Q.pg+' 참고</span>');hud();checkAch();save();
@@ -449,7 +520,7 @@ ord.forEach((oi,k)=>{const bt=document.createElement('button');bt.className='btn
 $('#mQwrap').classList.add('on');$('#mPause').classList.remove('on');}
 const SSP=[null, ["인공신경망과 딥러닝", "https://jeongbom.github.io/ai-basic/2-2-1/", ["", "오늘 할 일", "퍼셉트론 — 뉴런의 작동 방식을 모방한 것", "퍼셉트론은 어떻게 계산할까?", "가중치와 편향을 조정하면", "딥러닝의 구조", "활성화 함수 — 다음으로 무엇을 넘길까?", "딥러닝의 학습 — 한눈에 보기", "(1) 순전파와 배치 사이즈", "(2) 오차 계산 — 손실함수", "평균제곱오차(MSE) 계산하기", "(3) 역전파와 경사 하강법", "스스로 해결하기 — 학습 과정 정리", "플레이그라운드 체험 — 점을 색별로 나누기", "확인 문제", "정리"]], ["2차시 딥러닝 손 글씨 분류", "https://jeongbom.github.io/ai-basic/2-2-1-2/", ["", "오늘 할 일", "딥러닝과 기계학습은 어떤 차이가 있을까?", "딥러닝을 적용한 문제 해결 과정", "코랩 준비", "① 데이터셋 불러오기", "② 데이터 형태 확인하기", "③ 훈련 데이터 레이블별 개수", "④ 데이터 전처리 — 차원 변환", "⑤ 데이터 전처리 — 정규화", "⑥ 데이터 전처리 — 원-핫 인코딩", "⑦ 딥러닝 모델 구성", "⑧ 학습 방법 정하기 — 손실함수와 평가 지표", "⑨ 학습", "⑩ 성능 평가 — 오차와 정확도 그래프", "⑪⑫ 딥러닝 정확도와 기계학습 정확도 비교", "확인 문제", "정리"]], ["컴퓨터 비전", "https://jeongbom.github.io/ai-basic/2-2-2/", ["", "오늘 할 일", "컴퓨터는 시각적인 데이터를 어떻게 인식할까?", "컴퓨터 비전의 주요 분야", "함께 해결하기 — 객체 탐지 체험", "왜 새로운 신경망이 필요할까?", "합성곱 신경망의 구조", "필터 적용 — 특징을 추출하는 방법", "(1) 합성곱층 — 합성곱 연산 해 보기", "(2) 풀링층 — 크기를 줄이면서 중요한 정보 남기기", "(3) 완전 연결층 · 합성곱 신경망의 학습", "스스로 해결하기 — CNN 모델의 학습 과정 체험", "생성형 인공지능이란 무엇일까?", "컴퓨터 비전 기술은 어디에 활용될까? (1)", "컴퓨터 비전 기술은 어디에 활용될까? (2)", "확인 문제", "정리"]], ["음성 인식", "https://jeongbom.github.io/ai-basic/2-2-3/", ["", "오늘 할 일", "인공지능은 사람의 말소리를 어떻게 텍스트로 바꿀까?", "음성 인식 기술은 어떻게 달라졌을까?", "음성 인식은 어디에 활용될까?", "함께 해결하기 — 잰말놀이 발음 연습 프로그램", "④⑤ 잰말놀이 녹음하고 코랩에 올리기", "⑦ 코랩에서 음성 인식하기", "⑧ 인식 결과와 읽은 문장 비교하기", "⑨ 친구의 귀 vs 인공지능의 귀", "확인 문제", "정리"]], ["자연어 처리", "https://jeongbom.github.io/ai-basic/2-2-4/", ["", "오늘 할 일", "자연어 처리란 무엇일까?", "챗봇은 어떻게 대답할까?", "인공지능은 텍스트 데이터를 어떻게 인식할까?", "워드 임베딩 — 단어를 벡터 공간의 점으로", "언어 이해 ① 빈도수 기반 방식", "스스로 해결하기 — 워드 클라우드 만들기", "언어 이해 ② 의미론적 접근 방식", "언어 이해 ③ 딥러닝을 이용한 방식 — 순환 신경망", "생성형 언어 모델이란 무엇일까?", "확인 문제", "정리"]]];
 const TOPIC={1:'퍼셉트론과 딥러닝의 구조',2:'딥러닝의 학습과 손 글씨 분류',3:'컴퓨터 비전',4:'음성 인식과 자연어 처리',5:'종합·심화'};
-function hintHtml(pt,qi,pg){const m=QB[pt][qi].sl;let h='<b>교과서</b> '+pg;if(m){const P=SSP[m[0]];h+='<br><b>스스로 학습</b> 「'+P[0]+'」 '+m[1]+'번째 화면 · '+P[2][m[1]]+' <a class="btn small" href="'+P[1]+'#s'+m[1]+'" target="_blank" rel="noopener">열기 ↗</a>';}return h;}
+function hintHtml(m,pg){let h='<b>교과서</b> '+pg;if(m){const P=SSP[m[0]];h+='<br><b>스스로 학습</b> 「'+P[0]+'」 '+m[1]+'번째 화면 · '+P[2][m[1]]+' <a class="btn small" href="'+P[1]+'#s'+m[1]+'" target="_blank" rel="noopener">열기 ↗</a>';}return h;}
 function energyQuiz(){if(qOpen||forgeOpen||reportOpen)return;if(S.energy>0){say('기력이 아직 남아 있다. 기력이 0이 되면 충전 문제를 풀 수 있다.');return;}quiz(0,'기력 충전 문제','문제를 맞히면 기력이 5 찬다. 틀려도 1은 찬다.',ok=>{S.energy+=ok?5:1;return ok?'정답! 기력 +5':'아쉽다. 기력 +1';},ALLP,[1,2]);}
 const DSET=[[1],[1],[1,2],[2],[2,3],[3]];
 function ask(b){const ds=DSET[b.t];if(b.t===0)quiz(1,'돌 속에서 문제가 나왔다!','맞히면 돌을 얻고 기력이 1 늘어난다. 틀리면 돌이 단단해져 기력을 1 잃는다.',ok=>{if(ok){setB(b,AIR);gain(0);S.energy+=1;return '정답! 돌 1개를 얻었다. 기력 +1';}S.energy=Math.max(0,S.energy-1);return '아쉽다. 돌이 더 단단해졌다. 기력 −1';},ALLP,ds);
@@ -475,9 +546,9 @@ const u=$('#fgUp');if(u)u.onclick=()=>{if(!canUp())return;const nx=PICK[S.tier+1
 const FD=[null,[1],[2],[2,3],[3]][S.tier+1],FN=FD.map(d=>DN[d]).join('·');quiz(ot,'강화 시험 · '+nx.n,FN+' 문제다. 맞히면 재료를 써서 '+nx.n+'를 만든다. 틀리면 재료는 그대로 남는다.',ok=>{if(!ok)return '강화 실패. 재료는 남아 있다. 다시 도전해 보자.';Object.entries(nx.cost).forEach(([k,v])=>S.inv[k]-=v);S.tier++;ach('up1');if(S.tier>=2)ach('iron');if(S.tier===4)ach('maxpick');hud();return nx.n+' 완성!';},ALLP,FD);};}
 function openForge(){forgeOpen=true;holding=false;if(document.exitPointerLock)document.exitPointerLock();$('#mPause').classList.remove('on');renderForge();$('#forge').classList.add('on');}
 function closeForge(){if(!forgeOpen)return;forgeOpen=false;$('#forge').classList.remove('on');if(!qOpen)$('#mPause').classList.add('on');}
-function renderReport(){const tot=Object.values(QB).reduce((a,b)=>a+b.length,0),got=Object.values(S.qm).filter(v=>v===1).length,seen=Object.keys(S.qm).length,pct=seen?Math.round(got/seen*100):0,grade=pct>=90?'수석 광부':pct>=70?'선임 광부':pct>=50?'광부':'수습 광부';
+function renderReport(){const tot=Object.values(QB).reduce((a,b)=>a+b.length,0)+QT.length,got=Object.values(S.qm).filter(v=>v===1).length,seen=Object.keys(S.qm).length,pct=seen?Math.round(got/seen*100):0,grade=pct>=90?'수석 광부':pct>=70?'선임 광부':pct>=50?'광부':'수습 광부';
 const code=(S.name||'광부')+'|'+got+'|'+S.oq[0]+'|'+S.oq[1];let h0=0;for(const ch of code)h0=(h0*31+ch.charCodeAt(0))>>>0;
-const miss=[];Object.entries(S.ql).forEach(([k,v])=>{if(v===0){const [t,i]=k.split('-');miss.push(QB[t][i].pg);}});
+const miss=[];Object.entries(S.ql).forEach(([k,v])=>{if(v===0){if(k.startsWith('T:')){const tp=QT.find(x=>x.id===k.slice(2));if(tp)miss.push(tp.pg);}else{const [t,i]=k.split('-');if(QB[t]&&QB[t][i])miss.push(QB[t][i].pg);}}});
 $('#rpBody').innerHTML='<div class="summary"><div class="card-res"><span class="lab">광부</span><div class="big">'+(S.name||'(미등록)')+'</div></div><div class="card-res"><span class="lab">등급</span><div class="big y">'+grade+'</div></div><div class="card-res"><span class="lab">처음 만났을 때 맞힌 문제</span><div class="big">'+got+' / '+seen+' ('+pct+'%)</div><small>전체 문제 '+tot+'개 중 '+seen+'개를 만났다</small></div><div class="card-res"><span class="lab">전체 정답률</span><div class="big">'+(S.oq[1]?Math.round(S.oq[0]/S.oq[1]*100)+'%':'-')+'</div><small>'+S.oq[0]+' / '+S.oq[1]+'번</small></div><div class="card-res"><span class="lab">곡괭이</span><div class="big" style="font-size:20px">'+PICK[S.tier].n+'</div></div><div class="card-res"><span class="lab">캔 블록 '+S.blocks+'개</span><div style="font-size:14px;line-height:1.6">'+ORE.map((o,i)=>o.n+' '+S.mined[i]).join(' · ')+'</div></div><div class="card-res"><span class="lab">업적</span><div class="big">'+Object.keys(S.ach).length+' / '+Object.keys(ACH).length+'</div><small>'+Object.keys(S.ach).map(k=>ACH[k][0]).join(', ')+'</small></div><div class="card-res"><span class="lab">결과 코드</span><div class="big">'+h0.toString(36).toUpperCase().slice(0,6)+'</div></div></div>'+(miss.length?'<p class="need" style="margin-top:12px">다시 볼 곳: '+[...new Set(miss)].map(p=>'<span class="ref">교과서 '+p+'</span>').join(' ')+'</p>':'')+'<p class="need">이 화면을 캡처해서 제출한다.</p>';}
 function openReport(ending){reportOpen=true;$('#rpTitle').textContent=ending===true?'엔딩 · 전설의 인공지능 코어':'광부 보고서';$('#rpEnd').style.display=ending===true?'block':'none';holding=false;if(document.exitPointerLock)document.exitPointerLock();$('#mPause').classList.remove('on');renderReport();$('#report').classList.add('on');}
 function closeReport(){if(!reportOpen)return;reportOpen=false;$('#report').classList.remove('on');if(!qOpen)$('#mPause').classList.add('on');}
@@ -492,7 +563,7 @@ addEventListener('keydown',e=>{if(!isOpen)return;if(qOpen){if(/^Digit[1-4]$/.tes
 if(forgeOpen||reportOpen){if(e.code==='Escape'||e.code==='KeyQ'){closeForge();closeReport();}return;}if(e.code==='KeyQ'){menu();return;}if(e.code==='KeyE'){energyQuiz();return;}if(e.code==='KeyR'){home();return;}keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();});
 addEventListener('keyup',e=>{keys[e.code]=false;});
 $('#mExit').onclick=menu;$('#mEnBtn').onclick=energyQuiz;$('#mHome').onclick=()=>{home();lock();};$('#mResume').onclick=lock;$('#mForge').onclick=openForge;$('#mReport').onclick=openReport;$('#mReset').onclick=()=>{if(confirm('기록을 모두 지우고 처음부터 시작할까?')){try{localStorage.removeItem('dlMine')}catch(e){}location.reload();}};$('#fgClose').onclick=closeForge;$('#rpClose').onclick=closeReport;$('#forge').addEventListener('pointerdown',e=>{if(e.target.id==='forge')closeForge();});$('#report').addEventListener('pointerdown',e=>{if(e.target.id==='report')closeReport();});}
-return {init,open,menu,openReport,QB,_:{pl,keys,get,ray,update,render,breakBlock,ask,gen:()=>g,setHold:v=>{holding=v;},state:()=>({isOpen,qOpen,locked,target,brk,nVert})}};
+return {init,open,menu,openReport,QB,QT,_:{pl,keys,get,ray,update,render,breakBlock,ask,gen:()=>g,setHold:v=>{holding=v;},state:()=>({isOpen,qOpen,locked,target,brk,nVert})}};
 })();
 Mine.init();
 
