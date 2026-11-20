@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>산불 감시 기지</title>
+<link href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" rel="stylesheet">
+<style>
+/* ================= 블록 탐험 테마 ================= */
+:root{--bg:#1f1f26;--panel:#2c2c36;--panel2:#3b3b47;--line:#565666}
+html,body{font-family:'Galmuri14','Galmuri11','Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:15px;line-height:1.7;background-color:#1f1f26;background-size:64px 64px;image-rendering:pixelated}
+h1,h2,h3,.disp,.brand,.score b,.pts,.toast,.step h3 .num,button,input{font-family:'Galmuri14','Galmuri11','Malgun Gothic',sans-serif}
+.brand small{font-family:'Galmuri11','Malgun Gothic',sans-serif}
+*{border-radius:0!important}
+#hud{background:#16161c;border-bottom:4px solid #000;backdrop-filter:none}
+.panel,.mission,.card-res,.coach,pre.code,.why .eq{border:3px solid;border-color:#6a6a7c #17171c #17171c #6a6a7c}
+.mission{background:#2f3350}
+.btn,.opt{background:#6f6f7a;color:#fff;border:3px solid;border-color:#b3b3bf #33333b #33333b #b3b3bf;text-shadow:2px 2px #2b2b33;transition:none}
+.btn:hover,.opt:hover{background:#7f8fc4}
+.btn:active,.opt:active{border-color:#33333b #b3b3bf #b3b3bf #33333b}
+.btn.primary{background:#3c8a2a;border-color:#74d455 #1c4a10 #1c4a10 #74d455;color:#fff}
+.btn.primary:hover{background:#4aa334;filter:none}
+.btn.go{background:#c98a1b;border-color:#ffd166 #6b4505 #6b4505 #ffd166;color:#fff}
+.btn:disabled{background:#4a4a52;color:#9a9aa5;text-shadow:none}
+.opt.sel{background:#3565cc;border-color:#9fc0ff #1b3470 #1b3470 #9fc0ff;box-shadow:none}
+.opt.ok{background:#1f5a2c;color:#c9f7dc;border-color:#3ddc84 #0e3317 #0e3317 #3ddc84}
+.opt.no{background:#6b2630;color:#ffd4d4;border-color:#ff6b6b #3a1016 #3a1016 #ff6b6b}
+.opt.half{background:#6b5a1e;color:#ffe9a8}
+.pip{border:3px solid;border-color:#6a6a7c #17171c #17171c #6a6a7c;width:auto;min-width:36px;height:36px;padding:0 6px}
+.pip.cur{border-color:#b9ecff #1b6f95 #1b6f95 #b9ecff}
+.score{border:3px solid;border-color:#17171c #6a6a7c #6a6a7c #17171c;background:#101015}
+.ref{border-width:2px}
+.toast{border:3px solid #6b4505;box-shadow:4px 4px 0 rgba(0,0,0,.5)}
+.exit{margin-right:4px}
+canvas.ic{width:36px;height:36px;display:inline-block;border:0;background:none;image-rendering:pixelated;vertical-align:middle}
+/* 섬 화면 */
+#sW{animation:none}
+#worldWrap{max-width:960px;margin:0 auto}
+#world{width:100%;height:auto;display:block;image-rendering:pixelated;border:4px solid;border-color:#8a8a96 #101014 #101014 #8a8a96;background:#3b72dc;cursor:pointer;touch-action:none}
+#xp{max-width:560px;height:20px;margin:10px auto 0;background:#101014;border:3px solid;border-color:#000 #5a5a66 #5a5a66 #000;position:relative}
+#xp i{display:block;height:100%;background:#7ee33a;width:0;transition:width .4s}
+#xp span{position:absolute;inset:0;text-align:center;font-size:12px;line-height:14px;color:#fff;text-shadow:1px 1px #000;font-family:'Galmuri11','Malgun Gothic',sans-serif}
+#hotbar{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:8px auto 22px}
+.slot{width:58px;height:58px;background:#8b8b8b;border:3px solid;border-color:#373737 #fff #fff #373737;position:relative;display:inline-grid;place-items:center;flex:none}
+.slot b{position:absolute;right:3px;bottom:-2px;font-size:15px;color:#fff;text-shadow:2px 2px #3f3f3f}
+.slot small{position:absolute;left:-6px;right:-6px;bottom:-21px;text-align:center;font-size:12px;color:#c9c9d6;white-space:nowrap;font-family:'Galmuri11','Malgun Gothic',sans-serif}
+.slot.zero canvas{opacity:.28;filter:grayscale(1)}
+.slot .bolt{font-size:26px;line-height:1}
+.slot.zero .bolt{opacity:.35}
+.slot.bump{animation:bump .35s}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.25);background:#d9d9d9}100%{transform:scale(1)}}
+#wmsg.warn{color:#ffd84a}
+#actBtn{min-width:200px;font-size:16px;padding:9px 18px}
+/* 업적 */
+#achBox{position:fixed;right:12px;top:78px;z-index:60;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.achv{background:#202024;border:3px solid;border-color:#5a5a66 #000 #000 #5a5a66;color:#fff;padding:8px 14px 8px 10px;display:flex;gap:10px;align-items:center;min-width:230px;animation:achin 4.3s forwards}
+.achv small{display:block;color:#ffe65a;font-size:12px;font-family:'Galmuri11','Malgun Gothic',sans-serif}.achv b{display:block}.achv span{font-size:12px;color:#bdbdc8;font-family:'Galmuri11','Malgun Gothic',sans-serif}
+.achv canvas.ic{width:32px;height:32px}
+@keyframes achin{0%{transform:translateX(120%)}8%{transform:none}90%{transform:none;opacity:1}100%{transform:translateX(120%);opacity:0}}
+/* 대장간 */
+#forge{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:40;display:none;align-items:center;justify-content:center;padding:14px}
+#forge.on{display:flex}
+#forgeGui{background:#c6c6c6;color:#33333b;border:4px solid;border-color:#fff #555 #555 #fff;padding:14px 18px;max-width:600px;width:100%;max-height:92vh;overflow:auto;box-shadow:6px 6px 0 rgba(0,0,0,.5)}
+#forgeGui .gtitle{display:flex;justify-content:space-between;align-items:center;font-size:20px;margin-bottom:8px}
+#forgeGui .frow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+#forgeGui small{color:#55555f}
+#forgeGui .need{margin:12px 0 2px;color:#55555f;font-size:14px}
+#forgeGui .cost{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#8b8b8b;color:#fff;border:2px solid;border-color:#373737 #fff #fff #373737;text-shadow:1px 1px #3f3f3f}
+#forgeGui .cost.ok{background:#3c8a2a}#forgeGui .cost.no{background:#8a3a3a}
+#forgeGui canvas.ic{width:20px;height:20px}
+#forgeGui .slot canvas.ic{width:36px;height:36px}
+#forgeGui table.odds{border-collapse:collapse;width:100%;font-size:14px;margin-top:4px}
+#forgeGui table.odds th,#forgeGui table.odds td{border:2px solid #8b8b8b;padding:3px 8px;text-align:right}
+#forgeGui table.odds th:first-child,#forgeGui table.odds td:first-child{text-align:left}
+#forgeGui table.odds th{background:#a9a9a9}
+#forgeGui td.up{color:#1f7a1f;font-weight:700}#forgeGui td.down{color:#8a3a3a}
+#forgeGui .fnote{font-size:12px;color:#55555f;margin:8px 0 0;font-family:'Galmuri11','Malgun Gothic',sans-serif}
+@media (max-width:820px){.slot{width:50px;height:50px}.slot small{font-size:11px}}
+@media (max-width:500px){#hotbar{gap:2px}.slot{width:44px;height:44px}.slot canvas.ic{width:28px;height:28px}.slot small{font-size:10px;left:-4px;right:-4px}.slot .bolt{font-size:20px}}
+/* 1인칭 광산 */
+#mine{position:fixed;inset:0;z-index:45;display:none;background:#000;overflow:hidden;user-select:none}
+#mine.on{display:block}
+#mineCv{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;cursor:crosshair}
+#mCross{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;pointer-events:none;background:linear-gradient(#fff,#fff) center/2px 100% no-repeat,linear-gradient(#fff,#fff) center/100% 2px no-repeat;mix-blend-mode:difference}
+#mTop{position:absolute;left:12px;top:10px;display:flex;gap:16px;color:#fff;text-shadow:2px 2px #000;font-size:18px;pointer-events:none}
+#mTop b{color:#ffd84a}
+#mTarget{position:absolute;left:50%;top:12px;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,.6);padding:3px 12px;pointer-events:none;white-space:nowrap}
+#mTarget:empty{display:none}
+#mExit{position:absolute;right:12px;top:10px}
+#mEnBtn{position:absolute;left:50%;top:48%;transform:translateX(-50%);display:none;z-index:3;font-size:17px;padding:10px 20px;animation:pop .6s infinite alternate}
+#mEnBtn.on{display:block}
+@keyframes pop{from{transform:translateX(-50%) scale(1)}to{transform:translateX(-50%) scale(1.06)}}
+#mMsg{position:absolute;left:50%;top:63%;transform:translateX(-50%);color:#ffd84a;background:rgba(0,0,0,.72);padding:6px 14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center}
+#mMsg.on{opacity:1}
+#mPop{position:absolute;left:0;right:0;top:36%;pointer-events:none;text-align:center}
+#mPop div{font-size:28px;text-shadow:3px 3px #000;animation:mpop 1.5s forwards}
+@keyframes mpop{0%{opacity:0;transform:translateY(10px) scale(.8)}15%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-50px)}}
+#mHand{position:absolute;right:3%;bottom:-6%;width:min(36vw,320px);height:min(36vw,320px);image-rendering:pixelated;border:0;background:none;pointer-events:none;transform-origin:90% 90%;transform:rotate(6deg)}
+#mHand.swing{animation:mswing .32s infinite}
+@keyframes mswing{0%{transform:rotate(6deg)}50%{transform:rotate(-30deg) translate(-3%,5%)}100%{transform:rotate(6deg)}}
+@media (max-width:700px){#mTarget{top:44px}#mHelp{display:none}#mHot .slot{width:42px;height:42px}#mHot .slot canvas.ic{width:26px;height:26px}#mHot .slot small{display:none}#mHot{bottom:10px}}
+#mHot{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);display:flex;gap:4px;pointer-events:none}
+#mHelp{position:absolute;left:10px;bottom:6px;font-size:12px;color:#c9c9d6;text-shadow:1px 1px #000;pointer-events:none;font-family:'Galmuri11','Malgun Gothic',sans-serif}
+#mPause,#mQwrap{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:14px}
+#mPause.on,#mQwrap.on{display:flex}
+.gui{background:#c6c6c6;color:#33333b;border:4px solid;border-color:#fff #555 #555 #fff;padding:16px 20px;max-width:640px;width:100%;max-height:92vh;overflow:auto;box-shadow:6px 6px 0 rgba(0,0,0,.5)}
+.gui .gtitle{font-size:20px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.gui .need{color:#55555f;font-size:14px;margin:4px 0}
+.gui .frow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.gui p{margin:8px 0}
+.gui .qq{font-size:18px;margin:12px 0;color:#1f1f26}
+.gui .qopts{display:grid;gap:6px}
+.gui .qopts .btn{text-align:left;font-size:16px;padding:9px 14px}
+.gui .qopts .btn.ok{background:#3c8a2a!important;color:#fff!important;border-color:#74d455 #1c4a10 #1c4a10 #74d455}
+.gui .qopts .btn.no{background:#8a3a3a!important;color:#fff!important}
+.gui .qfb{display:none;margin:10px 0;padding:8px 12px;line-height:1.6}
+.gui .qfb.ok{display:block;background:#1f5a2c;color:#c9f7dc}
+.gui .qfb.no{display:block;background:#6b2630;color:#ffd4d4}
+.gui canvas.ic{vertical-align:middle}
+
+.gui .qhint{margin:8px 0}.gui .qhint #mQhintBox{margin-top:6px;padding:8px 12px;background:#e9e9ef;color:#1f1f26;line-height:1.7}.gui .qhint #mQhintBox:empty{display:none}.gui .qhint a.btn{text-decoration:none;display:inline-block}
+#rpEnd p:first-child{font-size:18px;color:#1f1f26}
+
+#mSignal{position:absolute;left:50%;top:46px;transform:translateX(-50%);display:none;color:#9fe8ff;background:rgba(10,20,40,.75);border:2px solid #4fd1ff;padding:3px 12px;white-space:nowrap;pointer-events:none;animation:sig 1.2s infinite alternate}
+#mSignal.on{display:block}
+@keyframes sig{from{opacity:.55}to{opacity:1}}
+@media (max-width:700px){#mSignal{top:78px;font-size:13px}}
+#mSignal.strong{color:#ffe65a;border-color:#ffd84a;background:rgba(60,40,0,.8);animation-duration:.5s}
+#mPause,#mQwrap{z-index:6}
+#mine:has(#mQwrap.on) #mEnBtn,#mine:has(#mPause.on) #mEnBtn{display:none}
+
+*{box-sizing:border-box}html,body{margin:0;background:#1f1f26;color:#eaf0ff;font-family:'Galmuri14','Galmuri11','Malgun Gothic',sans-serif;font-size:15px;line-height:1.7;word-break:keep-all}
+button,input{font-family:inherit;font-size:15px}button{cursor:pointer}.btn{padding:8px 16px}.btn.small{padding:4px 10px;font-size:13px}.btn:disabled{cursor:default}
+.ref{display:inline-block;margin:4px 0 0 6px;padding:1px 9px;border:2px solid #ffd166;color:#ffd166;font-size:13px;white-space:nowrap}
+#mTop{gap:10px;font-size:16px;flex-wrap:wrap;max-width:74%}#mTop span{background:rgba(0,0,0,.5);padding:2px 10px}
+#mTarget{top:auto;bottom:112px}
+#mBar{position:absolute;left:50%;bottom:48px;transform:translateX(-50%);display:flex;gap:4px;pointer-events:none}
+#mBar .sl{width:86px;background:rgba(0,0,0,.58);border:2px solid #5a5a66;padding:3px 4px;text-align:center;font-size:12px;line-height:1.4;color:#cfd6e6;white-space:nowrap}
+#mBar .sl i{font-style:normal;color:#ffe65a}#mBar .sl em{font-style:normal}#mBar .sl b{display:block;font-size:13px;font-weight:normal}
+#mBar .sl.on{border-color:#ffe65a;background:rgba(60,56,10,.82);color:#fff}
+#mBar .sl.lk{opacity:.5}
+#mObj{position:absolute;left:50%;top:52px;transform:translateX(-50%);background:rgba(0,0,0,.62);color:#ffe9a0;padding:4px 14px;pointer-events:none;max-width:92%;text-align:center}
+#mObj:empty{display:none}
+#mCode,#mSid{user-select:text;-webkit-user-select:text}
+#mCode,#mSid{font-size:20px;padding:6px 12px;width:230px;background:#fff;color:#1f1f26;border:3px solid;border-color:#555 #fff #fff #555;letter-spacing:2px;text-transform:uppercase}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0}
+.card-res{background:#e4e4ea;border:1px solid #9a9aa6;color:#1f1f26;padding:8px 12px}.card-res .lab{color:#55555f;font-size:13px}.card-res .big{font-size:22px}
+.gui .qq{font-size:17px;margin:10px 0}
+</style></head>
+<body>
+<div id="mine">
+<canvas id="mineCv"></canvas>
+<div id="mCross"></div>
+<div id="mTop"></div>
+<div id="mObj"></div>
+<div id="mTarget"></div>
+<div id="mBar"></div>
+<button class="btn small" id="mExit">메뉴 (Q)</button>
+<div id="mMsg"></div>
+<div id="mPop"></div>
+<div id="mHelp">WASD 이동 · 스페이스 점프 · 클릭(F) 불 끄기·상자 열기 · 1~7 도구 고르기 · E(오른쪽 클릭) 도구 쓰기 · R 땅 위로 · Q 메뉴</div>
+<div id="mPause"><div class="gui"><div class="gtitle"><b>산불 감시 기지</b></div>
+<p>숲에 산불이 번지고 있다. 코랩에서 <b>산불 이미지 분류 모델</b>을 만드는 단계를 하나씩 마칠 때마다 불을 끄는 <b>새 도구</b>가 생긴다. 도구를 모아 숲을 지키자.</p>
+<p>· 숲은 어느 쪽으로 가도 끝없이 이어진다. <b>불</b>은 처음부터 나 있다. 클릭 한 번에 물 1을 써서 불 1칸을 끈다. 화면 위의 화살표가 가장 가까운 불이 있는 쪽을 알려 준다.<br>· 숲 곳곳의 나무 밑동 옆에 <b>아이템 상자</b>가 숨어 있다. 찾아서 클릭하면 열린다.<br>· 코랩에서 한 단계의 마지막 코드 셀을 실행하면 <b>인증 코드</b>가 나온다. 아이템 상자에 코드를 넣고 문제 <b>1개</b>를 맞히면 새 도구가 나온다.<br>· 도구는 ① 소화탄 → ② 소방 호스 → ③ 소방 드론 → ④ 소방 헬기 → ⑤ 비구름 → ⑥ 묘목 순서로 생긴다. 숫자 키로 고르고 <b>E</b>(또는 마우스 오른쪽 버튼)로 쓴다.<br>· 코드가 없어도 상자는 열 수 있다. 물이 나오거나, 지금까지 얻은 도구 중 하나가 나온다. 도구가 나오면 문제 1개를 맞혀야 받는다.<br>· 도구가 다 떨어졌을 때 E를 누르면 <b>보급 문제</b>가 나온다. 맞히면 그 도구가 다시 생긴다.<br>· 코랩 ⑤를 마치면 <b>산불 감시 AI</b>가 켜진다. 코랩에서 얻은 정확도만큼 불을 찾아 끈다.<br>· 여섯 단계를 모두 마치면 <b>삽</b>(7번)이 생기고 숲에 <b>불기둥</b>이 솟는다. 삽으로 땅을 파면 철·금·다이아몬드 광석이 나오고, 광석을 캘 때 문제 1개가 나온다. 같은 광석 3개를 모으면 삽이 강화되어 더 깊이 팔 수 있다. 불기둥 아래 가장 깊은 곳에 산불의 근원인 <b>불의 심장</b>이 있다. 구덩이에서 나올 때는 R 키를 누른다.<br>· 번개는 계속 친다. 불을 모두 끄고 빨간 지붕 집 앞의 <b>빨간 완료 버튼</b>을 누르면 임무를 마친다. 더 하고 싶으면 누르지 않고 계속 해도 된다.</p>
+<div id="mMenu"></div></div></div>
+<div id="mQwrap"><div id="mQ" class="gui"></div></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+/* ---------- 산불 감시 기지: 단계별 문제 (교과서 202~214쪽) ---------- */
+const SQ=(()=>{
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),pick=a=>a[Math.floor(Math.random()*a.length)];
+const S=[[],[],[],[],[],[]];
+const add=(k,q,o,e,pg)=>S[k].push({q,o,e,pg});
+const gen=(k,id,pg,fn)=>S[k].push({id,pg,gen:fn});
+// ① 문제 정의 · 데이터 수집 (202~205쪽)
+add(0,'이 프로젝트는 지속가능발전목표(SDGs) 17개 가운데 어느 목표와 관련된 문제를 다룰까?',['13번 기후 변화 대응','4번 모두를 위한 양질의 교육','3번 건강과 웰빙','7번 깨끗한 에너지'],'13번 "기후 변화에 대한 영향 방지와 긴급 조치"를 위해 화재 예방 이미지 분류 모델을 만든다.','203쪽 문제 정의');
+add(0,'정해진 형식이나 구조 없이 자유롭게 저장되는 데이터를 무엇이라고 할까?',['비정형 데이터','정형 데이터','훈련 데이터','수치 데이터'],'정해진 형식이나 구조 없이 자유롭게 저장되는 데이터가 비정형 데이터다. 텍스트, 이미지, 오디오, 비디오 데이터가 대표적인 예다.','202쪽 비정형 데이터');
+add(0,'인공지능 프로젝트 수행 과정에서 "데이터 수집" 바로 다음 단계는?',['데이터 전처리','모델 학습','알고리즘 선정','성능 평가 및 수정'],'문제 정의 → 데이터 수집 → 데이터 전처리 → 데이터 시각화 및 분석 → 알고리즘 선정 → 모델 학습 → 성능 평가 및 수정 순서다.','203쪽 프로젝트 수행 과정');
+add(0,'프로젝트 수행 과정의 맨 마지막 단계는?',['성능 평가 및 수정','데이터 시각화 및 분석','알고리즘 선정','데이터 전처리'],'모델을 학습시킨 뒤 성능을 평가하고 수정하는 단계가 마지막이다.','203쪽 프로젝트 수행 과정');
+add(0,'교과서에서 개인 구글 드라이브와 코랩을 연결할 때 쓰는 함수는?',['drive.mount( )','files.upload( )','os.listdir( )','model.fit( )'],'google.colab 라이브러리의 drive를 불러와 drive.mount( )로 구글 드라이브와 연결한다.','204쪽 데이터 수집');
+add(0,"교과서는 'fire' 폴더 안에 'non'과 'fire' 하위 폴더를 만든다. 'non' 폴더에 넣는 사진은?",['산불이 아닌 이미지','산불 이미지','테스트용 새 이미지','흑백으로 바꾼 이미지'],"'non' 폴더에는 비화재 이미지, 'fire' 폴더에는 화재 이미지를 저장한다.",'204쪽 데이터 수집');
+add(0,'os.listdir(train_fire_dir)이 하는 일은?',['폴더 안의 파일 목록을 불러온다','폴더 안의 이미지를 화면에 그린다','폴더 안의 이미지 색상을 바꾼다','폴더 안의 이미지를 모두 지운다'],'os.listdir( )은 지정한 폴더에 들어 있는 파일 목록을 불러온다.','205쪽 이미지 데이터셋 확인');
+add(0,'산불 이미지가 162개, 산불이 아닌 이미지가 162개다. 학습에 쓸 이미지는 모두 몇 개일까?',['324개','162개','2개','81개'],'산불 이미지 162개와 산불이 아닌 이미지 162개를 더하면 324개다.','205쪽 이미지 데이터셋 확인');
+// ② 데이터 전처리 · 시각화 (205~207쪽)
+add(1,'cv2.imread( )로 읽은 이미지를 시각화하려고 색상 형식을 바꾼다. BGR 형식에서 어떤 형식으로 바꿀까?',['RGB 형식','GRAY 형식','PNG 형식','CSV 형식'],'cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)로 BGR 형식을 RGB 형식으로 변환한다.','205쪽 색상 변환');
+add(1,'cv2.cvtColor( ) 함수가 하는 일은?',['이미지의 색상 형식을 변환한다','이미지의 크기를 줄인다','이미지를 지정한 폴더에 저장한다','이미지의 개수를 센다'],'cv2.cvtColor( )는 이미지의 색상 형식을 변환하는 함수다.','205쪽 색상 변환');
+add(1,'cv2.imread( ) 함수가 하는 일은?',['경로의 이미지를 읽어 온다','이미지를 화면에 그려 준다','이미지의 색을 흑백으로 바꾼다','이미지의 정답을 예측한다'],'cv2.imread(file_path)는 경로에 있는 이미지 파일을 읽어 온다.','205쪽 색상 변환');
+add(1,'plt.xlabel(fire_img.shape)로 출력한 (400, 400, 3)에서 3이 뜻하는 것은?',['빨강·초록·파랑 세 가지 색 채널','학습에 쓸 이미지가 모두 세 장이라는 것','세 번 반복해 그렸다는 것','이미지를 세 배로 키운 것'],'컬러 이미지는 픽셀마다 R, G, B 세 값을 가진다. (400, 400, 3)은 400×400 픽셀에 색 채널이 3개라는 뜻이다.','206쪽 데이터 시각화');
+add(1,'plt.imshow(fire_img, aspect = \'auto\')가 하는 일은?',['산불 이미지를 화면에 그린다','산불 이미지를 폴더에서 지운다','산불 이미지의 개수를 출력한다','산불 이미지를 모델에 학습시킨다'],'imshow( )는 이미지를 그리는 함수다.','206쪽 데이터 시각화');
+add(1,'교과서의 read_img( ) 함수는 어떤 순서로 일할까?',['이미지를 읽고 색상 형식을 변환해 돌려준다','이미지를 지우고 새 이미지를 만든다','이미지를 모델에 학습시키고 정확도를 돌려준다','이미지를 세고 개수를 돌려준다'],'cv2.imread로 이미지를 읽고, cv2.cvtColor로 색상 형식을 바꾼 결과를 return한다.','205쪽 색상 변환');
+// ③ 알고리즘 선정 · 모델 만들기 (208~209쪽)
+add(2,'산불 이미지와 같은 비정형 데이터를 분류하려고 교과서가 선정한 딥러닝 알고리즘은?',['합성곱 신경망(CNN)','k-최근접 이웃(k-NN)','선형 회귀','k-평균 군집화'],'이미지 데이터를 분류하기 위해 합성곱 신경망(CNN) 딥러닝 알고리즘을 선정한다.','208쪽 알고리즘 선정');
+add(2,'CNN에서 입력 데이터와 필터의 합성곱 연산으로 특징을 추출하는 과정을 무엇이라 할까?',['컨볼루션','풀링','정규화','시각화'],'컨볼루션은 입력 데이터와 필터(커널) 간의 합성곱 연산을 통해 특징을 추출한다.','208쪽 컨볼루션');
+add(2,'CNN에서 입력 데이터의 공간 크기를 줄여 중요한 정보를 보존하는 과정을 무엇이라 할까?',['풀링','컨볼루션','컴파일','색상 변환'],'풀링은 입력 데이터의 공간 크기를 줄여 중요한 정보를 보존한다. 최대 풀링과 평균 풀링이 있다.','208쪽 풀링');
+add(2,'2×2 영역의 값이 29, 15, 0, 100일 때 최대 풀링의 결과는?',['100','0','36','144'],'최대 풀링은 지정한 크기에서 최댓값만 가져온다. 네 값 가운데 가장 큰 100을 가져온다.','208쪽 풀링');
+add(2,'교과서 모델의 마지막 층 Dense(1, activation = \'sigmoid\')은 어떤 값을 출력할까?',['0과 1 사이의 값 하나','0과 255 사이의 값 세 개','1과 10 사이의 값 열 개','100보다 큰 값 하나'],'마지막 Dense 층은 노드가 1개이고 활성화 함수가 시그모이드라서 0과 1 사이의 값 하나를 출력한다.','209쪽 모델 학습');
+add(2,'교과서 모델에서 tf.keras.layers.Flatten( )이 하는 일은?',['데이터를 1차원 형태로 변환한다','데이터의 크기를 절반으로 줄인다','데이터의 색을 흑백으로 바꾼다','데이터의 정답을 0과 1로 바꾼다'],'Flatten( ) 층을 지나면 데이터가 1차원 형태로 변환되어 Dense 층에 들어간다.','209쪽 모델 학습');
+add(2,'model.summary( )에 나오는 total params의 param은 무엇을 뜻할까?',['매개 변수(parameter)','학습 횟수(epoch)','배치 사이즈(batch size)','정확도(accuracy)'],'param은 parameter의 약자로 매개 변수를 뜻한다. 알고리즘이 학습으로 바꾸어 가는 값이다.','209쪽 모델 학습');
+add(2,'교과서 모델은 Conv2D와 MaxPool2D를 번갈아 세 번 쌓는다. 이 모델의 합성곱층은 몇 개일까?',['3개','1개','6개','9개'],'Conv2D 층이 3개, MaxPool2D 층이 3개다. 그 뒤에 Flatten과 Dense 층이 온다.','209쪽 모델 학습');
+add(2,'층을 순서대로 쌓아 모델을 만들 때 교과서가 사용한 모델은?',['Sequential 모델','k-NN 모델','선형 회귀 모델','의사결정트리 모델'],'tf.keras.models.Sequential로 합성곱층, 풀링층, Flatten, Dense 층을 차례로 쌓는다.','209쪽 모델 학습');
+// ④ 컴파일 · 훈련 데이터 설정 (210쪽)
+add(3,'model.compile( )에서 손실함수로 binary_crossentropy를 쓰는 까닭은?',['산불인지 아닌지 가리는 이진 분류 문제라서','열 가지 숫자를 고르는 다중 분류 문제라서','기대 수명 같은 수치를 예측하는 문제라서','정답 없이 비슷한 것끼리 묶는 문제라서'],'binary_crossentropy는 이진 분류 문제에 사용하는 손실함수다.','210쪽 모델 학습');
+add(3,'model.compile(loss = \'binary_crossentropy\', optimizer = \'adam\', metrics = [\'accuracy\'])에서 metrics = [\'accuracy\']의 뜻은?',['평가 지표로 정확도를 사용한다','손실함수로 정확도를 사용한다','학습 횟수를 정확도로 정한다','최적화 방법으로 정확도를 쓴다'],'compile( )로 손실함수, 가중치 최적화 방법(optimizer), 평가 지표(metrics)를 정한다. 평가 지표는 accuracy다.','210쪽 모델 학습');
+add(3,'교과서의 model.compile( )에서 가중치 최적화 방법(optimizer)으로 쓴 것은?',['Adam','sigmoid','Flatten','binary'],'최적화 방법은 Adam을 사용하고 평가 지표로는 accuracy를 사용한다.','210쪽 모델 학습');
+add(3,'ImageDataGenerator(rescale = 1/255)에서 rescale = 1/255가 하는 일은?',['RGB 값을 0과 1 사이로 정규화한다','이미지 크기를 255분의 1로 줄여 준다','이미지를 255장으로 늘려 준다','학습 횟수를 255번으로 정한다'],'픽셀 값(0~255)에 1/255를 곱해 0과 1 사이의 값으로 정규화한다.','210쪽 모델 학습');
+add(3,'flow_from_directory( )에서 몇 개의 샘플로 가중치를 갱신할지 정하는 것은?',['batch_size','target_size','class_mode','rescale'],'batch_size는 몇 개의 샘플로 가중치를 갱신할 것인지를 정한다. 교과서는 9로 두었다.','210쪽 모델 학습');
+add(3,'flow_from_directory( )에서 class_mode = \'binary\'로 정한 까닭은?',['산불 이미지인지 아닌지 이진 분류하기 때문','이미지가 0과 1의 흑백으로만 되어 있기 때문','폴더가 하나만 들어 있는 데이터이기 때문','학습을 두 번만 반복해서 끝내기 때문'],'산불 이미지인지 산불이 아닌 이미지인지를 이진 분류하므로 binary로 설정한다.','210쪽 모델 학습');
+add(3,'"Found 324 images belonging to 2 classes."에서 2 classes가 뜻하는 것은?',['fire와 non 두 종류의 폴더','학습을 두 번 반복한다는 것','이미지가 두 장씩 묶여 들어간다는 것','색 채널이 두 개라는 것'],'fire 폴더와 non 폴더, 두 종류의 이미지 324장을 찾았다는 뜻이다.','210쪽 모델 학습');
+// ⑤ 학습 · 학습 결과 확인 (210~211쪽)
+add(4,'교과서는 이미지 324장을 batch_size = 9로 나누어 학습한다. 324 ÷ 9로 구한 steps_per_epoch 값은?',['36','9','8','324'],'324 ÷ 9 = 36이므로 steps_per_epoch = 36으로 두었다.','210쪽 모델 학습');
+add(4,'history = model.fit(train_generator, steps_per_epoch = 36, epochs = 8, verbose = 1)에서 epochs = 8의 뜻은?',['전체 학습을 8번 반복한다','이미지 8장만 골라 학습한다','합성곱층을 8개로 늘린다','8초 동안만 학습을 한다'],'epoch는 학습 횟수다. 적절하게 횟수를 바꿔 가며 학습한 뒤 최적의 횟수로 정하는 것이 좋다.','210쪽 모델 학습');
+add(4,'교과서의 학습 결과에서 loss는 0.9772에서 0.0564로, accuracy는 0.6944에서 0.9815로 바뀌었다. 학습이 진행될수록 어떻게 되었을까?',['오차는 줄고 정확도는 높아졌다','오차는 늘고 정확도는 낮아졌다','오차와 정확도가 함께 줄었다','오차와 정확도가 그대로였다'],'학습이 진행되면서 오차(loss)는 줄어들고 정확도(accuracy)는 커졌다.','211쪽 성능 평가');
+add(4,'오차와 정확도의 변화를 그린 그래프에서 x축은 무엇일까?',['학습 횟수(epoch)','이미지의 개수','필터의 크기','배치 사이즈(batch size)'],'x축은 CNN 학습 횟수인 epoch, y축은 CNN 모델의 오차와 정확도다.','211쪽 오차와 정확도 시각화');
+add(4,'plt.plot(history.history[\'loss\'], \'r--\', label = \'loss\')는 무엇을 그릴까?',['학습 횟수에 따른 오차의 변화','학습에 사용한 산불 이미지','합성곱층의 필터 모양','테스트 이미지의 예측값'],'history.history[\'loss\']에는 학습 횟수별 오차가 기록되어 있다. accuracy에는 정확도가 들어 있다.','211쪽 오차와 정확도 시각화');
+add(4,'학습 결과의 마지막 줄이 "accuracy: 0.9815"이다. 이 모델은 학습한 이미지의 약 몇 %를 맞게 분류했을까?',['약 98%','약 2%','약 81%','약 50%'],'정확도 0.9815는 약 98%를 맞게 분류했다는 뜻이다.','211쪽 성능 평가');
+add(4,'학습 횟수(epoch)는 어떻게 정하는 것이 좋다고 했을까?',['횟수를 바꿔 가며 학습해 보고 정한다','언제나 8번으로 고정해서 학습한다','가능한 한 적게 한 번만 학습한다','이미지 개수와 같은 횟수로 학습한다'],'교과서는 8번을 학습했지만, 적절하게 횟수를 바꿔 가며 학습한 뒤 최적의 횟수로 설정하는 것이 좋다고 했다.','210쪽 모델 학습');
+add(4,'학습 결과 줄 "36/36 … loss: 0.0564 - accuracy: 0.9815"에서 loss가 뜻하는 것은?',['예측과 정답의 차이인 오차','모델이 맞게 분류한 이미지의 비율','학습에 걸린 전체 시간','학습에 쓴 이미지 개수'],'loss는 오차, accuracy는 정확도다. 오차는 작을수록, 정확도는 클수록 좋다.','211쪽 성능 평가');
+add(4,'교과서의 학습 결과에서 학습 정확도가 가장 높았던 때는?',['마지막 무렵의 학습','가장 처음의 학습','모든 학습에서 같았다','학습을 하기 전'],'학습이 진행되면서 정확도가 커져 마지막 무렵에 가장 높았다.','211쪽 오차와 정확도 시각화');
+// ⑥ 새 이미지 평가 · 데이터 편향성 (212~214쪽)
+add(5,'새로운 이미지를 모델에 넣기 전에 resize( )로 이미지 크기를 바꾸는 까닭은?',['학습한 이미지와 크기를 같게 맞추려고','이미지의 색을 흑백으로 바꾸어 넣으려고','이미지를 폴더에 따로 저장해 두려고','이미지에 산불이라는 정답을 붙이려고'],'테스트를 위해 새로운 이미지의 크기를 학습한 이미지와 같은 크기로 변환(resize)한다.','212쪽 새로운 이미지 평가');
+add(5,'우리가 만든 CNN 모델로 새로운 이미지를 테스트할 때 쓰는 함수는?',['model.predict( )','model.compile( )','model.summary( )','model.fit( )'],'predict( ) 함수에 테스트 이미지를 넣으면 예측 결과가 나온다.','213쪽 새로운 이미지 테스트');
+add(5,'교과서 코드는 예측값이 0이면 "Fire Image"를 출력한다. 예측값이 1에 가깝다면 모델은 무엇이라고 판단한 것일까?',['산불이 아닌 이미지','산불 이미지','판단할 수 없음','흑백 이미지'],'fire 폴더가 0, non 폴더가 1이다. 1에 가까우면 산불이 아닌 이미지로 판단한 것이다.','213쪽 새로운 이미지 테스트');
+add(5,'산불 이미지 분류 모델이 "빨간색 건물" 사진을 산불로 잘못 분류했다. 교과서가 설명한 까닭은?',['산불 데이터에 빨간색이 많아 색에 의존해 분류했기 때문','건물 사진의 크기가 학습한 이미지보다 더 컸기 때문','학습 횟수가 8번보다 많았기 때문','건물 사진이 흑백이었기 때문'],'산불 데이터에는 불을 상징하는 빨간색이 많다. 모델이 단순히 빨간색에 의존해 분류했을 수 있고, 이것이 데이터 편향성이다.','214쪽 데이터 편향성');
+add(5,'데이터 편향성이란 무엇일까?',['특정 성향의 데이터가 지나치게 많이 포함된 것','데이터의 개수가 너무 많아서 학습이 느려지는 것','데이터의 색상 형식이 BGR로 저장되는 것','데이터를 훈련용과 테스트용으로 나누는 것'],'데이터 수집 과정에서 특정 그룹이나 성향을 지닌 데이터가 과도하게 포함된 상황을 데이터 편향성이라고 한다.','214쪽 데이터 편향성');
+add(5,'데이터 편향성이 있으면 인공지능 모델에 어떤 일이 생길 수 있을까?',['예측 결과의 신뢰성이 떨어진다','학습할 이미지의 개수가 늘어난다','이미지의 색상 형식이 바뀐다','모델의 합성곱층이 더 생긴다'],'데이터 편향성은 인공지능 모델의 성능을 왜곡시키고 예측 결과의 신뢰성을 떨어뜨릴 수 있다.','214쪽 데이터 편향성');
+return S;})();
+/* ================= 산불 감시 기지 ================= */
+const TK={ABC:'ABCDEFGHJKLMNPQRSTUVWXYZ23456789',sid:s=>{const t=String(s).trim().toLowerCase();return t==='teacher'?t:t.replace(/\D/g,'');},
+h(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i)&255;h=Math.imul(h,16777619)>>>0;}h^=h>>>16;h=Math.imul(h,0x85ebca6b);h^=h>>>13;h=Math.imul(h,0xc2b2ae35);h^=h>>>16;return h>>>0;},
+make(sid,stage,payload){const h=TK.h(TK.sid(sid)+'|'+stage+'|'+payload+'|wf43');let c='';for(let i=0;i<4;i++)c+=TK.ABC[(h>>>(5*i))&31];return stage+payload+'-'+c;},
+check(sid,stage,tok){const m=/^([1-6])(\d{0,3})-([A-Z2-9]{4})$/.exec(String(tok).trim().toUpperCase());if(!m||+m[1]!==stage)return null;return TK.make(sid,stage,m[2])===m[0]?{payload:m[2]}:null;}};
+const WF=(()=>{
+const X=88,Y=13,Z=88,D=8,NCH=40,STONE=2,IRON=30,GOLD=31,DIA=32,DST=33,ROCK=34,HEART=35,HX=58,HZ=46,AIR=-1,BED=7,GR=0,DIRT=1,LOG=3,LEAF=4,FIRE=5,CHAR=6,PLANK=8,ROOF=9,TANK=10,WALL=11,BOFF=12,BON=13,GENB=15,DONE=18,BTN=26,BX=32,BZ=22,PZ=22,NUM='①②③④⑤⑥';
+const TOOLS=[{n:'소화탄',c:'#ffb38a',give:3,re:2,d:'불을 겨누고 쓰면 주변 4칸의 불을 한 번에 끈다'},{n:'소방 호스',c:'#9fd8ff',give:3,re:2,d:'바라보는 쪽으로 물줄기를 쏘아 한 줄의 불을 끈다'},{n:'소방 드론',c:'#d6c8ff',give:2,re:1,d:'드론이 가까운 불부터 8곳을 찾아가 끈다'},{n:'소방 헬기',c:'#ffd84a',give:2,re:1,d:'멀리 겨눈 곳에 물 폭탄을 떨어뜨려 주변 8칸의 불을 끈다'},{n:'비구름',c:'#b8e0ff',give:1,re:1,d:'12초 동안 비가 내려 숲 전체의 불을 끈다'},{n:'묘목',c:'#b6f0b0',give:5,re:3,d:'타 버린 나무를 겨누고 쓰면 나무가 다시 자란다. 빈 땅을 겨누면 새 나무를 심는다'},{n:'삽',c:'#e8c58a',give:0,re:0,d:'땅을 겨누고 클릭하면 판다. 광석을 캐면 문제가 나오고, 같은 광석 3개를 모으면 삽이 강화되어 더 깊이 팔 수 있다'}];
+const jo=(w,a,b)=>{const c=w.charCodeAt(w.length-1)-0xAC00;return w+(c>=0&&c%28?a:b);};
+const CELL=['데이터 확인','색상 변환·시각화','모델 만들기','학습 준비','학습 완료','새 이미지 평가'],CHEST=27,ROOFB=[],chests=[];
+const T2T={0:0,1:28,2:1,30:30,31:31,32:32,33:33,34:34,35:35,3:3,4:4,6:6,7:7,8:8,9:9,10:10,11:8,12:12,13:13,15:20,18:18,20:19,21:19,22:19,23:19,24:19,25:19,26:26,27:27};
+let S={v:1,sid:'',t0:0,built:[false,false,false,false,false,false],tok:[false,false,false,false,false,false],acc:0,water:6,bomb:0,tl:[0,0,0,0,0,0,0,0],sel:0,out:0,lost:0,qc:0,qt:0,alarm:0,ended:false,sv:0,ore:[0,0,0],boss:false};
+try{const sv=JSON.parse(localStorage.getItem('wfBase')||'null');if(sv&&sv.v===1){S=Object.assign(S,sv);if(!sv.tl){S.tl=S.built.map((b,k)=>b?TOOLS[k].give:0);S.tl[0]+=S.bomb||0;}S.bomb=0;}}catch(e){}
+while(S.tl.length<8)S.tl.push(0);if(S.sel>6)S.sel=0;
+const SV=['나무 삽','철 삽','금 삽','다이아 삽'],ORE=['철','금','다이아몬드'];
+const has=k=>S.built[Math.min(k,5)],lockMsg=k=>jo(TOOLS[k].n,'은','는')+(k<6?' 코랩 '+NUM[k]+' 단계의 인증 코드를 아이템 상자에 넣으면 쓸 수 있다.':' 코랩 여섯 단계를 모두 마치면 쓸 수 있다.');
+const save=()=>{try{localStorage.setItem('wfBase',JSON.stringify(S))}catch(e){}};
+let g,cv,gl,prog,loc={},vbo,ovbo,nVert=0,dirty=true,locked=false,qOpen=false,last=0,target=null,click=false,msgUntil=0,lastQ='';
+let time=0,tickT=0,nextBolt=20,nextItem=8,bombKey=false,itemSeen=false,T0=1,towerT=0,misses=0,alarmAt=1e9,beam=null,nextStorm=1e9,rainUntil=0,rainT=0,drone=null,fx=[],calm=false,combo=0,comboT=-9,curChest=null,nextSpark=1e9;
+const fires=new Map(),trees=[],items=[];
+const pl={x:20.5,y:3,z:27.5,yaw:0,pitch:.04,vy:0,ground:false},keys={};
+const WX=v=>((v%X)+X)%X,WZ=v=>((v%Z)+Z)%Z,dW=(d,n)=>{d=((d%n)+n)%n;return d>n/2?d-n:d;},pdist=(x,z)=>Math.hypot(dW(x-pl.x,X),dW(z-pl.z,Z));
+const ARW='↑↗→↘↓↙←↖',hint=(x,z)=>{const dx=dW(x-pl.x,X),dz=dW(z-pl.z,Z),f=-Math.sin(pl.yaw)*dx-Math.cos(pl.yaw)*dz,r=Math.cos(pl.yaw)*dx-Math.sin(pl.yaw)*dz;return ARW[(Math.round(Math.atan2(r,f)/(Math.PI/4))+8)%8]+' '+Math.round(Math.hypot(dx,dz))+'칸';};
+const idx=(x,y,z)=>((y+D)*Z+WZ(z))*X+WX(x),xyz=i=>[i%X,Math.floor(i/(X*Z))-D,Math.floor(i/X)%Z];
+const get=(x,y,z)=>y<-D?BED:y>=Y?AIR:g[idx(x,y,z)];
+const opaque=t=>t!==AIR&&t!==FIRE,flam=t=>t===LOG||t===LEAF;
+const set=(x,y,z,t)=>{g[idx(x,y,z)]=t;};
+function mkTree(x,z,h,r){for(let y=3;y<3+h;y++)set(x,y,z,LOG);const top=3+h-1;for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){if(dx||dz)set(x+dx,top,z+dz,LEAF);if(!(Math.abs(dx)===1&&Math.abs(dz)===1&&r()<.4))set(x+dx,top+1,z+dz,LEAF);}set(x,top+2,z,LEAF);const bl=[];for(let y=3;y<=top+2;y++)for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){const i=idx(x+dx,y,z+dz);if(flam(g[i]))bl.push([i,g[i]]);}trees.push([x,z,h,bl]);}
+function plant(x,z){x=WX(x);z=WZ(z);if(x>=28&&x<=36&&z>=16&&z<=24)return false;if(trees.some(t=>Math.max(Math.abs(dW(t[0]-x,X)),Math.abs(dW(t[1]-z,Z)))<3))return false;for(let y=3;y<=8;y++)for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)if(get(x+dx,y,z+dz)!==AIR)return false;if(Math.abs(dW(pl.x-x-.5,X))<1.2&&Math.abs(dW(pl.z-z-.5,Z))<1.2)return false;mkTree(x,z,3,Math.random);dirty=true;return true;}
+const treeAt=t=>t&&(t.t===CHAR||t.t===LOG||t.t===LEAF)?trees.find(a=>Math.abs(dW(a[0]-t.x,X))<=1&&Math.abs(dW(a[1]-t.z,Z))<=1):null;
+function addChest(rand){for(let n=0;n<400;n++){const t=trees[Math.floor(rand()*trees.length)],o=[[1,0],[-1,0],[0,1],[0,-1]][Math.floor(rand()*4)],x=WX(t[0]+o[0]),z=WZ(t[1]+o[1]);if(get(x,3,z)!==AIR||get(x,2,z)!==GR)continue;if(pdist(x+.5,z+.5)<7)continue;if(chests.some(c=>Math.max(Math.abs(dW(c[0]-x,X)),Math.abs(dW(c[1]-z,Z)))<7))continue;set(x,3,z,CHEST);chests.push([x,z]);dirty=true;return true;}return false;}
+function rmChest(x,z){const n=chests.findIndex(c=>c[0]===x&&c[1]===z);if(n>=0)chests.splice(n,1);if(get(x,3,z)===CHEST)set(x,3,z,AIR);dirty=true;nextItem=Math.max(nextItem,time+6);}
+function gen(){g=new Int8Array(X*(Y+D)*Z).fill(AIR);const r=rng(7),ro=rng(31);for(let z=0;z<Z;z++)for(let x=0;x<X;x++){set(x,-D,z,BED);for(let y=1-D;y<=0;y++)set(x,y,z,y>=-1?(ro()<.08?IRON:STONE):y>=-4?(ro()<.07?GOLD:DST):(ro()<.06?DIA:ROCK));set(x,1,z,DIRT);set(x,2,z,GR);}set(HX,1-D,HZ,HEART);
+for(let k=0;k<40000&&trees.length<600;k++){const x=Math.floor(r()*X),z=Math.floor(r()*Z);if(x>=28&&x<=36&&z>=16&&z<=24)continue;if(Math.abs(x-20)<2&&Math.abs(z-27)<2)continue;if(Math.abs(x-HX)<3&&Math.abs(z-HZ)<3)continue;if(trees.some(t=>Math.max(Math.abs(dW(t[0]-x,X)),Math.abs(dW(t[1]-z,Z)))<3))continue;mkTree(x,z,3+Math.floor(r()*3),r);}
+T0=0;for(let i=0;i<g.length;i++)if(flam(g[i]))T0++;
+for(let n=0;n<NCH;n++)addChest(r);
+for(let y=3;y<=4;y++)for(let z=19;z<=21;z++)for(let x=31;x<=33;x++)set(x,y,z,WALL);for(let z=18;z<=22;z++)for(let x=30;x<=34;x++)set(x,5,z,ROOF);for(let z=19;z<=21;z++)for(let x=31;x<=33;x++)set(x,6,z,ROOF);for(let z=18;z<=22;z++)for(let x=30;x<=34;x++)ROOFB.push([x,5,z]);for(let z=19;z<=21;z++)for(let x=31;x<=33;x++)ROOFB.push([x,6,z]);
+S.built.forEach((b,k)=>{if(b)structure(k);});if(!S.ended)for(let n=0;n<6;n++)bolt(true);if(S.built[5]){nextStorm=40;nextSpark=20;}if(S.built[4]){towerT=1;if(S.alarm===0)alarmAt=9;}dirty=true;}
+function structure(k){if(k===5){set(32,7,20,DONE);set(BX,3,BZ,BTN);}dirty=true;}
+function construct(k){S.built[k]=true;structure(k);if(curChest){rmChest(curChest[0],curChest[1]);curChest=null;}if(k===4){towerT=time+1;alarmAt=time+9;}if(k===5){S.alarm=2;nextSpark=time+20;nextStorm=time+45;calm=!fires.size;nextBolt=Math.max(nextBolt,time+12);}S.tl[k]+=TOOLS[k].give;S.sel=k;save();pop('코랩 '+NUM[k]+' 완료!','#ffe65a');pop('새 도구 · '+TOOLS[k].n+' '+TOOLS[k].give+'개','#b6f0b0');
+say(k===5?'오판의 까닭을 밝혔다. 묘목(6번)과 삽(7번)을 얻었다. 숲 어딘가에 불기둥이 솟았다! 삽으로 땅을 파 광석을 모아 삽을 강화하고, 불기둥 아래 깊은 곳의 불의 심장을 꺼 보자. 그만하려면 불을 모두 끄고 빨간 지붕 집 앞의 완료 버튼을 누른다.':k===4?'산불 감시 AI가 켜졌다. 코랩에서 얻은 정확도로 불을 찾아 끈다. 새 도구 비구름도 얻었다(5번 키).':'새 도구 '+jo(TOOLS[k].n,'을','를')+' 얻었다. '+(k+1)+'번 키로 고르고 E로 쓴다.');}
+function atlas(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+const tile=(t,fn)=>{x.save();x.translate((t%8)*16,Math.floor(t/8)*16);x.beginPath();x.rect(0,0,16,16);x.clip();fn();x.restore();};
+const noise=(cols,seed)=>{const r=rng(seed);for(let j=0;j<16;j++)for(let i=0;i<16;i++){x.fillStyle=cols[Math.floor(r()*cols.length)];x.fillRect(i,j,1,1);}};
+tile(0,()=>noise(['#5da73a','#6cbb46','#52982f','#4a8d2a','#78c650'],11));tile(1,()=>noise(['#7d7d82','#747479','#86868b','#6b6b70'],12));
+tile(3,()=>{noise(['#6b4a2a','#5c3f23','#7a5632'],13);x.fillStyle='#4a3119';[2,6,11,14].forEach(i=>x.fillRect(i,0,1,16));});
+tile(4,()=>{noise(['#2f8d36','#27792d','#3aa043','#226a27'],14);x.fillStyle='#1b5a20';[[2,3],[9,5],[5,10],[12,12],[13,2]].forEach(([a,b])=>x.fillRect(a,b,2,2));});
+[5,17].forEach((t,k)=>tile(t,()=>{noise(['#ff7a1a','#ff9a2e','#ffb347','#f2600c'],15+k);x.fillStyle='#ffe066';[[3,9],[8,6],[12,10],[6,12],[10,13]].forEach(([a,b])=>x.fillRect(a+(k?1:0),b-(k?2:0),2,4));x.fillStyle='#fff6c4';[[4,12],[9,10],[12,13]].forEach(([a,b])=>x.fillRect(a,b-(k?1:0),1,2));}));
+tile(6,()=>noise(['#1c1c1e','#2a2a2c','#141416','#3a3230'],16));tile(7,()=>noise(['#2a2a2e','#3a3a40','#1c1c20'],17));
+tile(8,()=>{noise(['#b08552','#a67b4a','#b98e5a'],18);x.fillStyle='#7d5a33';for(let j=3;j<16;j+=4)x.fillRect(0,j,16,1);});
+tile(9,()=>{noise(['#c0392b','#b23324','#d04a3a'],19);x.fillStyle='#8f261c';for(let j=3;j<16;j+=4)x.fillRect(0,j,16,1);});
+tile(10,()=>{noise(['#3b8fd6','#4c9fe6','#3580c4'],20);x.fillStyle='#bfe4ff';x.fillRect(2,2,4,1);x.fillRect(2,2,1,4);x.fillStyle='#1f5f96';x.fillRect(0,7,16,1);x.fillRect(0,15,16,1);});
+tile(12,()=>{noise(['#6c6c76','#5e5e68','#7a7a84'],21);x.fillStyle='#3a3a44';x.fillRect(5,5,6,6);});
+tile(13,()=>{x.fillStyle='#1f9a9a';x.fillRect(0,0,16,16);x.fillStyle='#5ee6e0';x.fillRect(2,2,12,12);x.fillStyle='#e6fffd';x.fillRect(5,5,6,6);});
+tile(18,()=>{noise(['#2f8d36','#3aa043'],22);x.fillStyle='#eaffea';[[3,8],[4,9],[5,10],[6,11],[7,10],[8,9],[9,8],[10,7],[11,6],[12,5]].forEach(([a,b])=>x.fillRect(a,b,2,2));});
+tile(19,()=>{x.fillStyle='#ffd84a';x.fillRect(0,0,16,16);x.fillStyle='#1b1b1f';for(let k=-16;k<32;k+=8)for(let j=0;j<16;j++)x.fillRect(k+j,j,4,1);x.fillRect(0,0,16,1);x.fillRect(0,15,16,1);});
+tile(20,()=>{noise(['#4a4a55','#42424c','#52525e'],23);x.fillStyle='#2a2a33';x.fillRect(0,0,16,1);x.fillRect(0,15,16,1);x.fillStyle='#ffd84a';[[8,3],[7,4],[6,5],[5,6],[6,7],[7,7],[8,7],[9,7],[8,8],[7,9],[6,10],[5,11]].forEach(([a,b])=>x.fillRect(a,b,2,1));});
+tile(24,()=>{x.fillStyle='#2f7fd0';x.fillRect(0,0,16,16);x.fillStyle='#17508f';x.fillRect(0,0,16,2);x.fillRect(0,14,16,2);x.fillStyle='#eaf6ff';[[7,3,2,2],[6,5,4,2],[5,7,6,3],[6,10,4,2]].forEach(([a,b,w,h])=>x.fillRect(a,b,w,h));});
+tile(25,()=>{x.fillStyle='#e23a2c';x.fillRect(0,0,16,16);x.fillStyle='#fff3e0';x.fillRect(0,6,16,4);x.fillStyle='#2a2a30';x.fillRect(0,0,16,2);x.fillStyle='#8f1d14';x.fillRect(0,14,16,2);});
+tile(27,()=>{noise(['#9a6a32','#8c5e2a','#a8763a'],25);x.fillStyle='#5a3a16';x.fillRect(0,0,16,1);x.fillRect(0,15,16,1);x.fillRect(0,0,1,16);x.fillRect(15,0,1,16);x.fillRect(0,6,16,1);x.fillStyle='#ffd84a';x.fillRect(6,5,4,4);x.fillStyle='#7a5a10';x.fillRect(7,6,2,2);});
+tile(28,()=>noise(['#7a5634','#6d4c2d','#86603b','#5f4226'],26));
+const oreT=(t,base,dots,seed)=>tile(t,()=>{noise(base,seed);const r=rng(seed+50);for(let n=0;n<7;n++){x.fillStyle=dots[n%dots.length];x.fillRect(1+Math.floor(r()*13),1+Math.floor(r()*13),2,2);}});
+oreT(30,['#7d7d82','#747479','#86868b','#6b6b70'],['#e6c3a0','#c99a72','#f5e0c8'],27);oreT(31,['#5e5e66','#55555c','#68686f'],['#ffd84a','#ffe98a','#e0b420'],28);oreT(32,['#3d3d46','#35353d','#46464f'],['#5ee6e0','#b6fffb','#2fb8c0'],29);
+tile(33,()=>noise(['#5e5e66','#55555c','#68686f','#4d4d54'],30));tile(34,()=>noise(['#3d3d46','#35353d','#46464f','#2c2c33'],31));
+tile(35,()=>{noise(['#ff5a1a','#ff8a2e','#e03a0c','#ffb347'],32);x.fillStyle='#fff2a0';x.fillRect(5,5,6,6);x.fillStyle='#ffffff';x.fillRect(7,7,2,2);});
+tile(26,()=>{noise(['#8a8a94','#7c7c86','#96969f'],24);x.fillStyle='#7a1410';x.fillRect(3,3,10,10);x.fillStyle='#e23a2c';x.fillRect(4,4,8,8);x.fillStyle='#ff9a8a';x.fillRect(5,5,3,2);});
+[['#ffffff',14],['#4fb7ff',15],['#ff4a3a',16]].forEach(([c0,t])=>tile(t,()=>{x.fillStyle=c0;x.fillRect(0,0,16,16);}));return c;}
+function initGL(){cv=$('#mineCv');gl=cv.getContext('webgl',{antialias:false,alpha:false})||cv.getContext('experimental-webgl');if(!gl)return false;
+const sh=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);return s;};prog=gl.createProgram();
+gl.attachShader(prog,sh(gl.VERTEX_SHADER,'attribute vec3 p;attribute vec2 u;attribute float l;uniform mat4 m;uniform vec3 o;varying vec2 v;varying float vl;varying float vd;void main(){gl_Position=m*vec4(p+o,1.);v=u;vl=l;vd=gl_Position.w;}'));
+gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,'precision mediump float;uniform sampler2D t;uniform vec3 sky;varying vec2 v;varying float vl;varying float vd;void main(){vec4 c=texture2D(t,v);vec3 col=min(c.rgb*vl,vec3(1.));float f=clamp((vd-10.)/32.,0.,1.);gl_FragColor=vec4(mix(col,sky,f),1.);}'));
+gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS))return false;gl.useProgram(prog);
+loc={p:gl.getAttribLocation(prog,'p'),u:gl.getAttribLocation(prog,'u'),l:gl.getAttribLocation(prog,'l'),m:gl.getUniformLocation(prog,'m'),o:gl.getUniformLocation(prog,'o'),sky:gl.getUniformLocation(prog,'sky')};
+const tx=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tx);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,atlas());
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+vbo=gl.createBuffer();ovbo=gl.createBuffer();gl.enable(gl.DEPTH_TEST);return true;}
+const FACES=[[[1,0,1],[1,0,0],[1,1,0],[1,1,1],.8,[1,0,0]],[[0,0,0],[0,0,1],[0,1,1],[0,1,0],.8,[-1,0,0]],[[0,1,1],[1,1,1],[1,1,0],[0,1,0],1,[0,1,0]],[[0,0,0],[1,0,0],[1,0,1],[0,0,1],.5,[0,-1,0]],[[0,0,1],[1,0,1],[1,1,1],[0,1,1],.9,[0,0,1]],[[1,0,0],[0,0,0],[0,1,0],[1,1,0],.65,[0,0,-1]]];
+const UV=[[0,1],[1,1],[1,0],[0,0]],tuv=t=>[(t%8+.5)/8,(Math.floor(t/8)+.5)/8];
+function face(out,x,y,z,f,tile,light,s0,s1){const F=FACES[f],u0=(tile%8)/8+.002,v0=Math.floor(tile/8)/8+.002,s=1/8-.004;[0,1,2,0,2,3].forEach(k=>{const c=F[k];out.push(x+(c[0]?s1:s0),y+(c[1]?s1:s0),z+(c[2]?s1:s0),u0+UV[k][0]*s,v0+UV[k][1]*s,light);});}
+const CH=22,NC=X/CH,vbos=[],nV=[];let g0=null;
+function buildChunk(c){const x0=(c%NC)*CH,z0=Math.floor(c/NC)*CH,out=[];for(let y=-D;y<Y;y++)for(let z=z0;z<z0+CH;z++)for(let x=x0;x<x0+CH;x++){const t=g[idx(x,y,z)];if(!opaque(t))continue;const vary=.9+((x*73+y*37+z*91)%7)/60,gl2=t===BTN?1.5:t===HEART?1.7:t===CHEST?1.15:1;for(let f=0;f<6;f++){const n=FACES[f][5];if(!opaque(get(x+n[0],y+n[1],z+n[2])))face(out,x,y,z,f,T2T[t],FACES[f][4]*vary*gl2,0,1);}}
+if(!vbos[c])vbos[c]=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vbos[c]);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(out),gl.DYNAMIC_DRAW);nV[c]=out.length/6;}
+function build(){if(!g0)g0=new Int8Array(g.length).fill(-9);const dc=new Set();for(let i=0;i<g.length;i++)if(g[i]!==g0[i]){g0[i]=g[i];const x=i%X,z=Math.floor(i/X)%Z,cx=Math.floor(x/CH),cz=Math.floor(z/CH),lx=x%CH,lz=z%CH;dc.add(cx+cz*NC);if(lx===0)dc.add((cx+NC-1)%NC+cz*NC);if(lx===CH-1)dc.add((cx+1)%NC+cz*NC);if(lz===0)dc.add(cx+((cz+NC-1)%NC)*NC);if(lz===CH-1)dc.add(cx+((cz+1)%NC)*NC);}
+dc.forEach(c=>buildChunk(c));nVert=nV.reduce((u,v)=>u+v,0);dirty=false;return dc.size;}
+function mul(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o;}
+function mvp(){const asp=cv.width/cv.height,f=1/Math.tan(70*Math.PI/360),n=.05,F=90;const pr=new Float32Array([f/asp,0,0,0,0,f,0,0,0,0,(F+n)/(n-F),-1,0,0,2*F*n/(n-F),0]);const cy=Math.cos(-pl.yaw),sy=Math.sin(-pl.yaw),cx=Math.cos(-pl.pitch),sx=Math.sin(-pl.pitch);
+const ry=new Float32Array([cy,0,-sy,0,0,1,0,0,sy,0,cy,0,0,0,0,1]),rx=new Float32Array([1,0,0,0,0,cx,sx,0,0,-sx,cx,0,0,0,0,1]),tr=new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,-pl.x,-(pl.y+1.55),-pl.z,1]);return mul(pr,mul(rx,mul(ry,tr)));}
+function bind(buf){gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,24,0);gl.enableVertexAttribArray(loc.u);gl.vertexAttribPointer(loc.u,2,gl.FLOAT,false,24,12);gl.enableVertexAttribArray(loc.l);gl.vertexAttribPointer(loc.l,1,gl.FLOAT,false,24,20);}
+function boxLines(L,x0,y0,z0,x1,y1,z1,tile,light){const [u,v]=tuv(tile),P8=[[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1],[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]];[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]].forEach(([i,j])=>{[i,j].forEach(k=>L.push(P8[k][0],P8[k][1],P8[k][2],u,v,light));});}
+function beamTri(Tr,a,b,t,tile,light){const [u,v]=tuv(tile);[[t,0,0],[0,t,0],[0,0,t]].forEach(o=>{const q=[[a[0]-o[0],a[1]-o[1],a[2]-o[2]],[b[0]-o[0],b[1]-o[1],b[2]-o[2]],[b[0]+o[0],b[1]+o[1],b[2]+o[2]],[a[0]+o[0],a[1]+o[1],a[2]+o[2]]];[0,1,2,0,2,3].forEach(k=>Tr.push(q[k][0],q[k][1],q[k][2],u,v,light));});}
+const nextPad=()=>S.built.indexOf(false);
+function render(ts){const w=cv.clientWidth,h=cv.clientHeight;if(w&&h&&(cv.width!==w||cv.height!==h)){cv.width=w;cv.height=h;}if(dirty)build();
+const smoke=Math.min(1,fires.size/35),rain=time<rainUntil,sky=rain?[.42,.5,.6]:[.56+.3*smoke,.76-.16*smoke,.96-.46*smoke];gl.clearColor(sky[0],sky[1],sky[2],1);gl.uniform3f(loc.sky,sky[0],sky[1],sky[2]);
+gl.viewport(0,0,cv.width,cv.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.uniformMatrix4fv(loc.m,false,mvp());const RV=43,offs=[];[0].concat(pl.x<RV?[-X]:[],pl.x>X-RV?[X]:[]).forEach(a=>[0].concat(pl.z<RV?[-Z]:[],pl.z>Z-RV?[Z]:[]).forEach(b=>offs.push([a,b])));offs.forEach(([a,b])=>{gl.uniform3f(loc.o,a,0,b);for(let c=0;c<NC*NC;c++){if(!nV[c])continue;const mx=(c%NC)*CH+CH/2+a-pl.x,mz=Math.floor(c/NC)*CH+CH/2+b-pl.z;if(Math.abs(mx)>RV+CH/2||Math.abs(mz)>RV+CH/2)continue;bind(vbos[c]);gl.drawArrays(gl.TRIANGLES,0,nV[c]);}});
+const Tr=[],L=[],fr=Math.floor(ts/170)%2;fires.forEach((f,i)=>{const [x,y,z]=xyz(i),fl=1.25+.35*Math.sin(ts/90+i);for(let k=0;k<6;k++)face(Tr,x,y,z,k,fr?5:17,fl,-.03,1.03);});
+if(S.alarm===1)ROOFB.forEach(([x,y,z],n)=>{const fl=1.25+.35*Math.sin(ts/90+n);for(let k=0;k<6;k++)face(Tr,x,y,z,k,fr?5:17,fl,-.03,1.03);});
+if(target)boxLines(L,target.x-.01,target.y-.01,target.z-.01,target.x+1.01,target.y+1.01,target.z+1.01,14,1.4);
+items.forEach((o,n)=>{const by=3.3+.12*Math.sin(ts/260+n);for(let k=0;k<6;k++)face(Tr,o.x,by,o.z,k,o.type>=0?25:24,1.35,.28,.72);beamTri(Tr,[o.x+.5,4.3,o.z+.5],[o.x+.5,11,o.z+.5],.035,o.type>=0?16:15,1.5);});
+if(beam&&time<beam.until)beamTri(Tr,[beam.to[0],12.9,beam.to[2]],beam.to,.07,beam.tile,1.6);if(S.alarm===1)beamTri(Tr,[32.5,12.9,20.5],[32.5,7,20.5],.1+.03*Math.sin(ts/120),16,1.6);if(S.built[5]&&!S.boss){const pw=.3+.08*Math.sin(ts/100);beamTri(Tr,[HX+.5,12.9,HZ+.5],[HX+.5,3,HZ+.5],pw,16,1.25);beamTri(Tr,[HX+.5,12.9,HZ+.5],[HX+.5,3,HZ+.5],pw*.45+.02,fr?5:17,1.5);}
+fx.forEach(o=>{if(time<o.until)beamTri(Tr,o.a,o.b,o.w,o.tile,1.6);});
+if(drone)for(let k=0;k<6;k++)face(Tr,drone.pos[0]-.5,drone.pos[1]+.6,drone.pos[2]-.5,k,13,1.6,.3,.7);
+if(rain)for(let n=0;n<70;n++){const rx=pl.x+(Math.random()-.5)*26,rz=pl.z+(Math.random()-.5)*26,ry=3+Math.random()*9;beamTri(Tr,[rx,ry,rz],[rx,ry-1.3,rz],.012,15,1.4);}
+if(S.built[5]&&!S.ended)boxLines(L,BX-.08,3,BZ-.08,BX+1.08,4.15+.12*Math.sin(ts/250),BZ+1.08,fires.size?14:16,1.6);
+const nt=Tr.length/6;gl.bindBuffer(gl.ARRAY_BUFFER,ovbo);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(Tr.concat(L)),gl.DYNAMIC_DRAW);bind(ovbo);offs.forEach(([a,b])=>{gl.uniform3f(loc.o,a,0,b);if(nt)gl.drawArrays(gl.TRIANGLES,0,nt);if(L.length)gl.drawArrays(gl.LINES,nt,L.length/6);});}
+function hit(x,y,z){for(let by=Math.floor(y);by<=Math.floor(y+1.69);by++)for(let bz=Math.floor(z-.3);bz<=Math.floor(z+.3);bz++)for(let bx=Math.floor(x-.3);bx<=Math.floor(x+.3);bx++)if(get(bx,by,bz)!==AIR)return true;return false;}
+function ray(R){R=R||6.5;const cp=Math.cos(pl.pitch),d=[-Math.sin(pl.yaw)*cp,Math.sin(pl.pitch),-Math.cos(pl.yaw)*cp],o=[pl.x,pl.y+1.55,pl.z],c=o.map(Math.floor),st=d.map(v=>v>0?1:-1),td=d.map(v=>v===0?1e9:Math.abs(1/v)),tm=d.map((v,i)=>v===0?1e9:((v>0?c[i]+1:c[i])-o[i])/v);
+for(let i=0;i<200;i++){const a=tm[0]<tm[1]?(tm[0]<tm[2]?0:2):(tm[1]<tm[2]?1:2);if(tm[a]>R)return null;const p=c.slice();c[a]+=st[a];tm[a]+=td[a];const t=get(c[0],c[1],c[2]);if(t!==AIR)return {x:c[0],y:c[1],z:c[2],t,px:p[0],py:p[1],pz:p[2]};}return null;}
+function say(t){const ms=Math.max(3600,t.length*85);msgUntil=performance.now()+ms;const e=$('#mMsg');e.textContent=t;e.classList.add('on');setTimeout(()=>{if(performance.now()>=msgUntil-50)e.classList.remove('on');},ms+100);}
+function pop(t,col){const d=document.createElement('div');d.textContent=t;d.style.color=col||'#fff';$('#mPop').appendChild(d);setTimeout(()=>d.remove(),1500);}
+const keep=()=>Math.max(0,Math.round((1-S.lost/T0)*100));
+const mmss=()=>{const s=S.t0?Math.floor((Date.now()-S.t0)/1000):0;return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+function objective(){if(S.ended)return '';const k=nextPad();if(k<0){const end=(fires.size?'불 '+fires.size+'곳을 모두 끄고 ':'')+'빨간 지붕 집('+hint(32.5,22.5)+') 앞의 완료 버튼을 누르면 임무 완료';return S.boss?'불의 심장까지 껐다! '+end:'삽(7번)으로 땅을 파 광석을 모으고 삽을 강화하자 · 불기둥('+hint(HX+.5,HZ+.5)+') 아래 깊은 곳에 불의 심장이 있다 · 그만하려면 '+end;}
+if(k===5)return S.alarm===1?'감시 AI 경보! 빨간 지붕 집('+hint(32.5,20.5)+')에 불이 났다. 가서 불을 꺼 보자':'감시 AI가 숲을 지켜보고 있다. 불을 끄며 숲을 지키자';
+if(k===4)return '코랩 ⑤ 학습이 끝나면 아이템 상자에 인증 코드를 넣어 산불 감시 AI를 켜자. 그동안 숲을 지키자';
+return '할 일: 코랩 '+NUM[k]+' '+CELL[k]+' → 숲에 숨어 있는 아이템 상자를 찾아 인증 코드를 넣고 '+jo(TOOLS[k].n,'을','를')+' 얻자';}
+function nearFire(){if(!fires.size)return '';let bd=1e9,bx=0,bz=0;fires.forEach((f,i)=>{const [x,y,z]=xyz(i),d=pdist(x+.5,z+.5);if(d<bd){bd=d;bx=x;bz=z;}});return ' · 가까운 불 '+hint(bx+.5,bz+.5);}
+function hud(){$('#mTop').innerHTML='<span>'+S.sid+' · '+mmss()+'</span><span style="color:#9fd8ff">물 <b>'+S.water+'</b></span><span style="color:#ffd84a">끈 불 <b>'+S.out+'</b></span><span style="color:#b6f0b0">숲 보존 <b>'+keep()+'%</b></span>'+'<span style="color:#ffb38a">불 <b>'+(fires.size+(S.alarm===1?ROOFB.length:0))+'</b>곳'+nearFire()+'</span>'+(S.built[4]?'<span>감시 AI 정확도 <b>'+S.acc.toFixed(2)+'</b></span>':'')+(S.built[5]?'<span style="color:#e8c58a">'+SV[S.sv]+' · 철 '+S.ore[0]+' 금 '+S.ore[1]+' 다이아 '+S.ore[2]+(pl.y<2.5?' · 깊이 '+Math.round(3-pl.y)+'칸':'')+'</span>':'');$('#mObj').textContent=objective();
+$('#mBar').innerHTML=TOOLS.map((T,k)=>'<div class="sl'+(k===S.sel?' on':'')+(has(k)?'':' lk')+'"><i>'+(k+1)+'</i> '+(has(k)?'<em style="color:'+T.c+'">'+(k===6?SV[S.sv].replace(' 삽',''):S.tl[k]+'개')+'</em>':'<em>'+(k<6?'코랩 '+NUM[k]+' 후':'모두 마친 뒤')+'</em>')+'<b>'+T.n+'</b></div>').join('')+(time<rainUntil?'<div class="sl on"><em>비</em><b>'+Math.ceil(rainUntil-time)+'초</b></div>':'');}
+function ignite(i){if(!flam(g[i]))return;fires.set(i,{orig:g[i],born:time,life:40+Math.random()*20});g[i]=FIRE;dirty=true;}
+function douse(i){const f=fires.get(i);if(!f)return;g[i]=f.orig;fires.delete(i);dirty=true;}
+function put(n){if(n<=0)return;S.out+=n;combo=time-comboT<4?combo+n:n;comboT=time;const m=Math.floor(combo/10);if(m>Math.floor((combo-n)/10)){S.water+=2;pop('연속 진화 '+m*10+'! 물 +2','#ffe65a');}}
+function area(cx,cy,cz,r,flat){let n=0;[...fires.keys()].forEach(j=>{const [x,y,z]=xyz(j);if(Math.max(Math.abs(dW(x-cx,X)),flat?0:Math.abs(y-cy),Math.abs(dW(z-cz,Z)))<=r){douse(j);n++;}});return n;}
+function bolt(big){const leaves=[];trees.forEach(([x,z,h])=>{const i=idx(x,3+h+1,z);if(g[i]===LEAF)leaves.push([i,pdist(x+.5,z+.5)]);});if(!leaves.length)return;leaves.sort((a,b)=>a[1]-b[1]);const pool=leaves.slice(0,40);const i=pool[Math.floor(Math.random()*pool.length)][0];ignite(i);if(big){const [x,y,z]=xyz(i);[[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,c])=>ignite(idx(x+a,y-1,z+c)));}}
+const dirv=()=>{const cp=Math.cos(pl.pitch);return [-Math.sin(pl.yaw)*cp,Math.sin(pl.pitch),-Math.cos(pl.yaw)*cp];};
+function useTool(){const k=S.sel,T=TOOLS[k];if(S.alarm===1){const t0=ray(45);if(t0&&(t0.t===ROOF||t0.t===WALL)){falseFire();return;}}if(!has(k)){say(lockMsg(k));return;}
+if(k===6){dig(ray());return;}
+if(S.tl[k]<=0){refillQuiz(k);return;}
+let n=0;const eye=[pl.x,pl.y+1.4,pl.z];
+if(k===0){const t=ray(9);if(!t||t.t!==FIRE){say('불을 겨누고 E를 누르면 소화탄을 던진다.');return;}n=area(t.x,t.y,t.z,4);pop('소화탄! 불 '+n+'곳을 껐다',T.c);}
+else if(k===1){const d=dirv();let e=eye;for(let q=1;q<=18;q+=.5){const a=[eye[0]+d[0]*q,eye[1]+.15+d[1]*q,eye[2]+d[2]*q],c=a.map(Math.floor),b=get(c[0],c[1],c[2]);if(b===BED||(b in DIGT))break;e=a;n+=area(c[0],c[1],c[2],1);}
+if(!n){say('물줄기가 닿는 곳에 불이 없다. 불 쪽을 바라보고 쓰자.');return;}fx.push({a:[eye[0],eye[1]-.3,eye[2]],b:e,w:.09,tile:15,until:time+.35});pop('소방 호스! 불 '+n+'곳을 껐다',T.c);}
+else if(k===2){if(!fires.size){say('지금은 끌 불이 없다.');return;}if(drone){say('드론이 이미 날고 있다.');return;}drone={left:8,next:time,pos:[pl.x,pl.y+2,pl.z],n:0};pop('소방 드론 출동!',T.c);}
+else if(k===3){const t=ray(45);if(!t){say('불이 난 곳을 멀리서 겨누고 쓰자.');return;}n=area(t.x,t.y,t.z,8,true);if(!n){say('그곳에는 불이 없다. 불이 난 곳을 겨누자.');return;}fx.push({a:[t.x+.5,12.6,t.z+.5],b:[t.x+.5,3,t.z+.5],w:.5,tile:15,until:time+.5});pop('소방 헬기! 불 '+n+'곳을 껐다',T.c);}
+else if(k===4){if(time<rainUntil){say('이미 비가 내리고 있다.');return;}if(!fires.size){say('지금은 끌 불이 없다.');return;}rainUntil=time+12;rainT=time;pop('비구름! 12초 동안 비가 내린다',T.c);}
+else if(k===5){const t=ray(9),tr=treeAt(t);if(!tr&&t&&t.t===GR){if(!plant(t.x,t.z)){say('여기에는 심을 수 없다. 다른 나무와 조금 떨어진 빈 땅을 겨누자.');return;}pop('새 나무를 심었다',T.c);}else{if(!tr){say('타 버린 나무를 겨누고 쓰면 나무가 다시 자란다. 빈 땅을 겨누면 새 나무를 심는다.');return;}let m=0;tr[3].forEach(([i,b])=>{if(g[i]===CHAR||g[i]===AIR){g[i]=b;m++;}});if(!m){say('이 나무는 멀쩡하다. 타 버린 나무를 찾자.');return;}if(!tr.cut)S.lost=Math.max(0,S.lost-m);tr.cut=false;dirty=true;pop('나무가 다시 자랐다 · 숲 보존 '+keep()+'%',T.c);}}
+S.tl[k]--;put(n);save();}
+const DIGT={[GR]:0,[DIRT]:0,[STONE]:0,[IRON]:0,[DST]:1,[GOLD]:1,[ROCK]:2,[DIA]:2,[HEART]:3},BN={[GR]:'풀밭',[DIRT]:'흙',[STONE]:'돌',[IRON]:'철 광석',[DST]:'단단한 돌',[GOLD]:'금 광석',[ROCK]:'암반',[DIA]:'다이아몬드 광석',[HEART]:'불의 심장'},OREK={[IRON]:0,[GOLD]:1,[DIA]:2};
+function dig(t){if(!t||!(t.t in DIGT)){say('삽으로는 땅을 판다. 땅을 겨누고 클릭하자.');return;}const need=DIGT[t.t];if(S.sv<need){say(jo(BN[t.t],'은','는')+' '+jo(SV[need],'이','가')+' 있어야 팔 수 있다. '+ORE[need-1]+' 3개를 모으면 삽이 강화된다 (지금 '+S.ore[need-1]+'개).');return;}
+if(t.t===HEART){bossDialog(t);return;}if(t.t in OREK){oreQuiz(t);return;}set(t.x,t.y,t.z,AIR);dirty=true;}
+function oreQuiz(t){const o=OREK[t.t],nm=ORE[o],base=[STONE,DST,ROCK][o];quizBox(BN[t.t],'문제를 맞히면 '+jo(nm,'을','를')+' 얻는다. 틀리면 광석이 돌로 변한다.',pickQ(pool()),ok=>{let m='';if(ok){S.ore[o]++;set(t.x,t.y,t.z,AIR);if(S.sv===o&&S.ore[o]>=3){S.sv++;m=' '+nm+' 3개로 삽을 강화했다 → '+SV[S.sv]+'! '+(S.sv<3?'더 깊은 곳을 팔 수 있다.':'이제 불의 심장에 도전할 수 있다.');}}else set(t.x,t.y,t.z,base);dirty=true;return ok?'정답! '+nm+' +1 (모은 개수 '+S.ore[o]+').'+m:'아쉽다. 광석이 돌로 변했다.';},()=>'계속',closeQ);}
+function bossDialog(t){showQ('<div class="gtitle"><b>불의 심장</b></div><p>땅속 깊은 곳에서 타오르는 <b>산불의 근원</b>을 찾았다. 문제 <b>3개</b>를 맞히면 끌 수 있다. 틀리면 불씨가 튀어 숲에 불이 난다.</p><div class="frow"><button class="btn primary" id="mQgo">도전하기 (Enter)</button><button class="btn" id="mQno">물러나기</button></div>');$('#mQno').onclick=closeQ;$('#mQgo').onclick=()=>{let hp=3;const next=()=>{if(hp<=0){S.boss=true;S.ended=true;set(t.x,t.y,t.z,AIR);[...fires.keys()].forEach(i=>douse(i));dirty=true;save();report(true);return;}
+quizBox('불의 심장 · 남은 힘 '+hp+' / 3','문제를 맞힐 때마다 불의 심장이 약해진다.',pickQ(pool()),ok=>{if(ok)hp--;else{bolt(true);bolt(true);}return ok?(hp?'정답! 불의 심장이 약해졌다.':'정답! 불의 심장이 꺼져 간다.'):'아쉽다. 불씨가 튀어 숲에 불이 났다.';},()=>hp<=0?'불의 심장 끄기':'다음 문제',next);};next();};}
+function sparkAt(cx,cz){const c=trees.filter(([x,z,h])=>Math.hypot(dW(x-cx,X),dW(z-cz,Z))<10&&g[idx(x,3+h+1,z)]===LEAF);if(!c.length||fires.size>=30)return;const [x,z,h]=c[Math.floor(Math.random()*c.length)],i=idx(x,3+h+1,z);ignite(i);[[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,b])=>ignite(idx(x+a,3+h,z+b)));}
+function surface(){if(pl.y>=2.9){say('이미 땅 위에 있다.');return;}const bx=Math.floor(pl.x),bz=Math.floor(pl.z);for(let r=0;r<=12;r++)for(let dz=-r;dz<=r;dz++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==r)continue;const x=bx+dx,z=bz+dz;if(get(x,2,z)!==AIR&&get(x,3,z)===AIR&&get(x,4,z)===AIR){pl.x=WX(x)+.5;pl.z=WZ(z)+.5;pl.y=3;pl.vy=0;say('땅 위로 올라왔다.');return;}}}
+function fireTick(){const N6=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];[...fires.entries()].forEach(([i,f])=>{const [x,y,z]=xyz(i);if(time-f.born>f.life){g[i]=f.orig===LOG?CHAR:AIR;fires.delete(i);S.lost++;dirty=true;return;}
+if(time<rainUntil)return;N6.forEach(([a,b,c])=>{const j=idx(x+a,y+b,z+c);if(y+b<Y&&flam(g[j])&&fires.size<45&&Math.random()<.02)ignite(j);});
+if(fires.size<45&&Math.random()<.003){const j=idx(x+Math.floor(Math.random()*9)-4,Math.max(3,Math.min(Y-2,y+Math.floor(Math.random()*3)-1)),z+Math.floor(Math.random()*9)-4);if(flam(g[j]))ignite(j);}});}
+function towerTick(){if(S.alarm===0&&time>=alarmAt){S.alarm=1;save();say('감시 AI 경보! 빨간 지붕 집에 불이 났다. 빨간 빛기둥이 선 곳으로 가서 꺼 보자.');return;}
+if(!fires.size)return;const ks=[...fires.keys()],i=ks[Math.floor(Math.random()*ks.length)],[x,y,z]=xyz(i);if(Math.random()<S.acc){douse(i);beam={to:[x+.5,y+.5,z+.5],until:time+.45,tile:15};}else{misses++;if(misses%6===1)say('감시 AI가 불을 놓쳤다. 정확도가 낮으면 자주 놓친다.');}}
+function act(t){if(!t)return;if(t.t===CHEST){chestDialog(WX(t.x),WZ(t.z));return;}if(t.t===BTN){endDialog();return;}if((t.t===ROOF||t.t===WALL)&&S.alarm===1){falseFire();return;}if(S.built[5]&&(t.t===HEART||(S.sel===6&&(t.t in DIGT)))){dig(t);return;}
+if(t.t===FIRE){if(S.water<=0){say(S.built[0]?'물이 없다. E를 눌러 도구를 쓰거나 숲의 아이템 상자를 열자.':'물이 없다. 숲에 숨어 있는 아이템 상자를 열면 물이 나온다.');return;}S.water--;douse(idx(t.x,t.y,t.z));pop('불을 껐다','#9fd8ff');put(1);save();return;}}
+function update(dt,ts){if(keys.ArrowLeft)pl.yaw+=1.9*dt;if(keys.ArrowRight)pl.yaw-=1.9*dt;if(keys.ArrowUp)pl.pitch=Math.min(1.5,pl.pitch+1.5*dt);if(keys.ArrowDown)pl.pitch=Math.max(-1.5,pl.pitch-1.5*dt);
+let f=(keys.KeyW?1:0)-(keys.KeyS?1:0),s=(keys.KeyD?1:0)-(keys.KeyA?1:0);if(f||s){const m=Math.hypot(f,s);f/=m;s/=m;const dx=(-Math.sin(pl.yaw)*f+Math.cos(pl.yaw)*s)*4.6*dt,dz=(-Math.cos(pl.yaw)*f-Math.sin(pl.yaw)*s)*4.6*dt;let bl=false;if(!hit(pl.x+dx,pl.y,pl.z))pl.x+=dx;else bl=true;if(!hit(pl.x,pl.y,pl.z+dz))pl.z+=dz;else bl=true;if(bl&&pl.ground&&!hit(pl.x+dx*3,pl.y+1.05,pl.z+dz*3)&&!hit(pl.x,pl.y+1.05,pl.z))pl.vy=7.4;}
+if(keys.Space&&pl.ground)pl.vy=7.4;pl.vy-=24*dt;const ny=pl.y+pl.vy*dt;if(!hit(pl.x,ny,pl.z)){pl.y=ny;pl.ground=false;}else{if(pl.vy<0)pl.ground=true;pl.vy=0;}
+if(pl.x<0)pl.x+=X;else if(pl.x>=X)pl.x-=X;if(pl.z<0)pl.z+=Z;else if(pl.z>=Z)pl.z-=Z;time+=dt;if(time>=nextBolt&&!S.ended){if(fires.size<(S.built[5]?24:10))bolt();nextBolt=time+(S.built[5]?18:S.built[4]?22:S.built[3]?26:S.built[0]?45:50);}
+if(S.built[5]&&!S.ended&&time>=nextStorm){nextStorm=time+50;for(let n=0;n<3;n++)bolt(true);say('마른번개 폭풍! 여러 곳에 한꺼번에 불이 났다. 도구를 쓰자.');}
+if(S.built[5]&&!S.boss&&!S.ended&&time>=nextSpark){nextSpark=time+30;sparkAt(HX,HZ);}
+if(S.built[5]&&!S.ended){if(!fires.size){if(!calm){calm=true;nextBolt=Math.max(nextBolt,time+25);nextStorm=Math.max(nextStorm,time+25);say('불을 모두 껐다! 빨간 지붕 집 앞의 완료 버튼을 누르면 임무를 마친다. 더 하고 싶으면 삽(7번)으로 땅을 파 불의 심장을 찾아보자.');}}else calm=false;}
+if(drone&&time>=drone.next){let best=-1,bd=1e9;fires.forEach((f,i)=>{const [x,y,z]=xyz(i),d=Math.hypot(dW(x+.5-drone.pos[0],X),y+.5-drone.pos[1],dW(z+.5-drone.pos[2],Z));if(d<bd){bd=d;best=i;}});if(best<0||drone.left<=0){pop('소방 드론이 불 '+drone.n+'곳을 끄고 돌아왔다','#d6c8ff');drone=null;}else{const [x,y,z]=xyz(best),to=[drone.pos[0]+dW(x+.5-drone.pos[0],X),y+.5,drone.pos[2]+dW(z+.5-drone.pos[2],Z)];fx.push({a:drone.pos.slice(),b:to,w:.05,tile:14,until:time+.3});douse(best);put(1);drone.pos=[pl.x+dW(to[0]-pl.x,X),to[1],pl.z+dW(to[2]-pl.z,Z)];drone.left--;drone.n++;drone.next=time+.3;}}
+if(time<rainUntil&&time>=rainT){rainT=time+.25;const ks=[...fires.keys()];for(let n=0;n<2&&ks.length;n++){douse(ks.splice(Math.floor(Math.random()*ks.length),1)[0]);put(1);}}
+fx=fx.filter(o=>time<o.until);
+if(bombKey){bombKey=false;useTool();}if(!S.ended&&chests.length<NCH&&time>=nextItem){nextItem=time+8;addChest(Math.random);}
+for(let n=items.length-1;n>=0;n--){const o=items[n];if(Math.hypot(pl.x-o.x-.5,pl.z-o.z-.5)<1.25&&pl.y<5.5){items.splice(n,1);if(o.type<0){S.water+=3;pop('물통을 주웠다 · 물 +3','#9fd8ff');}else{S.tl[o.type]++;pop(TOOLS[o.type].n+' +1',TOOLS[o.type].c);}save();}}
+if(time>=tickT){tickT=time+1.2;fireTick();}
+if(S.built[4]&&time>=towerT){towerT=time+.8;towerTick();}
+target=ray();let lab='';if(target){const t=target.t;if(t===FIRE)lab='불 · 클릭하면 물 1을 써서 이 불 1칸을 끈다'+(S.built[S.sel]&&S.tl[S.sel]>0?' · E를 누르면 '+TOOLS[S.sel].n:'');else if(t===CHEST)lab='아이템 상자 · 클릭하면 연다';else if(t===ROOF||t===WALL)lab=S.alarm===1?'불?! · 클릭해서 꺼 보자':'빨간 지붕 집';else if(t===LEAF||t===LOG)lab='나무';else if(t in DIGT)lab=!S.built[5]?'':t===HEART?'불의 심장 · 산불의 근원'+(S.sv>=3?' · 클릭하면 도전한다':' · 다이아 삽이 있어야 한다'):S.sel!==6?(t in OREK?BN[t]+' · 삽(7번)으로 캔다':''):S.sv<DIGT[t]?BN[t]+' · '+jo(SV[DIGT[t]],'이','가')+' 있어야 팔 수 있다':BN[t]+(t in OREK?' · 클릭하면 캔다 (문제 1개)':' · 클릭하면 판다');else if(t===CHAR)lab='타 버린 나무'+(S.built[5]?' · 묘목(6번)을 고르고 E를 누르면 다시 자란다':'');else if(t===BTN)lab=S.ended?'임무 완료 버튼':fires.size?'임무 완료 버튼 · 불을 모두 끈 뒤에 누른다 (남은 불 '+fires.size+'곳)':'임무 완료 버튼 · 클릭하면 임무를 마친다';else if(t===DONE)lab='조사를 마친 집';}
+$('#mTarget').textContent=lab;if(click){click=false;act(target);}hud();
+}
+function unlock(){for(const k in keys)keys[k]=false;if(document.exitPointerLock)document.exitPointerLock();}
+function lock(){if(!S.sid){menu();return;}if(cv.requestPointerLock){try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}$('#mPause').classList.remove('on');}
+function closeQ(){qOpen=false;$('#mQwrap').classList.remove('on');lock();}
+function showQ(html){qOpen=true;unlock();$('#mPause').classList.remove('on');$('#mQ').innerHTML=html;$('#mQwrap').classList.add('on');}
+const REW=k=>k===4?'산불 감시 AI가 켜지고 새 도구 비구름을 얻는다':k===5?'오판의 까닭이 밝혀지고 새 도구 묘목을 얻는다':'새 도구 '+jo(TOOLS[k].n,'을','를')+' 얻는다';
+function codeDialog(k,chest){showQ('<div class="gtitle"><b>'+(chest?'아이템 상자 · ':'')+'코랩 '+NUM[k]+' '+CELL[k]+' · 인증 코드</b></div>'+(k===5?'<p>물을 뿌려도 꺼지지 않는다. <b>불이 아니다!</b> 감시 AI가 빨간 지붕 집을 산불로 잘못 보았다. 코랩 ⑥에서 빨간 건물 사진을 예측해 보고, 왜 잘못 보았는지 조사하자.</p>':'')+'<p>코랩에서 <b>'+NUM[k]+' '+CELL[k]+'</b> 단계의 마지막 코드 셀을 실행하면 실행 결과 아래에 <b>인증 코드</b>가 나온다. 그 코드를 여기에 입력한다.</p><p><input type="text" id="mCode" maxlength="12" autocomplete="off" placeholder="예: '+(k+1)+(k===4?'98':'')+'-ABCD"></p><p class="need">코드는 내 학번('+S.sid+')으로 만들어진다. 다른 사람의 코드는 통하지 않는다. 코드를 넣고 문제 1개를 맞히면 '+REW(k)+'.'+(chest?' 코드가 아직 없으면 <b>코드 없이 열기</b>를 누른다. 물이나 지금까지 얻은 도구 중 하나가 나온다.':'')+'</p><div class="qfb"></div><div class="frow"><button class="btn primary" id="mQgo">확인 (Enter)</button>'+(chest?'<button class="btn" id="mOpen">코드 없이 열기</button>':'')+'<button class="btn" id="mQno">닫기</button></div>');if(chest)$('#mOpen').onclick=loot;
+$('#mQno').onclick=closeQ;$('#mQgo').onclick=()=>{const r=TK.check(S.sid,k+1,$('#mCode').value),fb=$('#mQ .qfb');if(!r){fb.className='qfb no';fb.textContent='코드가 맞지 않다. 코랩의 출력과 학번을 다시 확인하자.';return;}if(k===4)S.acc=Math.max(0,Math.min(1,(+r.payload||0)/100));S.tok[k]=true;save();stageQuiz(k);};setTimeout(()=>{const e=$('#mCode');if(e)e.focus();},30);}
+function pickQ(pool){let p,n=0;do{p=pool[Math.floor(Math.random()*pool.length)];n++;}while(pool.length>1&&(p.id||p.q)===lastQ&&n<20);lastQ=p.id||p.q;return p.gen?Object.assign({pg:p.pg},p.gen()):p;}
+function quizBox(title,sub,Q,onDone,nextLabel,onNext){const ord=[0,1,2,3].sort(()=>Math.random()-.5);showQ('<div class="gtitle"><b>'+title+'</b></div><p class="need">'+sub+'</p><p class="qq">'+Q.q+'</p><div class="qopts"></div><div class="qfb"></div>');const box=$('#mQ'),og=box.querySelector('.qopts');let done=false;
+ord.forEach((oi,k)=>{const bt=document.createElement('button');bt.className='btn';bt.dataset.i=oi;bt.textContent=(k+1)+'. '+Q.o[oi];bt.onclick=()=>{if(done)return;done=true;const ok=oi===0;S.qt++;if(ok)S.qc++;if(!ok)bt.classList.add('no');og.querySelectorAll('button').forEach(b=>{b.disabled=true;if(+b.dataset.i===0)b.classList.add('ok');});const fb=box.querySelector('.qfb');fb.className='qfb '+(ok?'ok':'no');fb.innerHTML=onDone(ok)+'<br>'+Q.e+(ok||!Q.pg?'':' <span class="ref">교과서 '+Q.pg+' 참고</span>');save();const c=document.createElement('button');c.className='btn primary';c.id='mQgo';c.textContent=nextLabel()+' (Enter)';c.onclick=onNext;box.appendChild(c);c.focus();};og.appendChild(bt);});}
+function stageQuiz(k){let got=0;const used=new Set(),pool=SQ[k];const next=()=>{if(got>=1){construct(k);closeQ();return;}let cand=pool.filter(q=>!used.has(q.id||q.q));if(!cand.length){used.clear();cand=pool;}const Q0=cand[Math.floor(Math.random()*cand.length)];used.add(Q0.id||Q0.q);const Q=Q0.gen?Object.assign({pg:Q0.pg},Q0.gen()):Q0;
+quizBox('코랩 '+NUM[k]+' '+CELL[k],(k===5?'감시 AI가 왜 잘못 보았을까? ':'')+'문제 1개를 맞히면 '+REW(k)+'.',Q,ok=>{if(ok)got++;return ok?'정답!':'아쉽다. 다른 문제가 이어서 나온다.';},()=>got>=1?'도구 받기':'다음 문제',next);};next();}
+const pool=()=>[].concat(...[0,1,2,3,4,5].filter(i=>S.built[i]).map(i=>SQ[i]));
+function refillQuiz(k){const T=TOOLS[k];quizBox(T.n+' 보급',jo(T.n,'이','가')+' 없다. 문제를 맞히면 '+T.n+' '+T.re+'개를 얻는다.',pickQ(pool()),ok=>{if(ok)S.tl[k]+=T.re;return ok?'정답! '+T.n+' +'+T.re:'아쉽다. 보급을 받지 못했다. E를 누르면 다른 문제가 나온다.';},()=>'계속',closeQ);}
+function loot(){if(!curChest)return;const c=curChest,un=[0,1,2,3,4,5].filter(k=>S.built[k]),r=Math.random();let k=-1;if(un.length&&r<.8){const top=un[un.length-1],ot=un.slice(0,-1);k=r<.5||!ot.length?top:ot[Math.floor(Math.random()*ot.length)];}
+if(k<0){rmChest(c[0],c[1]);curChest=null;S.water+=3;save();if(qOpen)closeQ();pop('상자에서 물 3이 나왔다','#9fd8ff');return;}
+const T=TOOLS[k];quizBox('아이템 상자 · '+T.n,'상자에 '+jo(T.n,'이','가')+' 들어 있다. 문제를 맞히면 '+T.n+' '+T.give+'개를 얻는다.',pickQ(pool()),ok=>{if(ok){S.tl[k]+=T.give;rmChest(c[0],c[1]);}curChest=null;return ok?'정답! '+T.n+' +'+T.give:'아쉽다. 상자가 다시 닫혔다. 다시 열면 다른 문제가 나온다.';},()=>'계속',closeQ);}
+function chestDialog(x,z){curChest=[x,z];const k=nextPad();if(k>=0&&k<5){if(!S.tok[k]){codeDialog(k,true);return;}showQ('<div class="gtitle"><b>아이템 상자</b></div><p>코랩 '+NUM[k]+' '+CELL[k]+'의 인증 코드는 이미 넣었다. 문제 1개를 맞히면 '+REW(k)+'.</p><div class="frow"><button class="btn primary" id="mQgo">문제 풀기 (Enter)</button><button class="btn" id="mOpen">코드 없이 열기</button><button class="btn" id="mQno">닫기</button></div>');$('#mQno').onclick=closeQ;$('#mQgo').onclick=()=>stageQuiz(k);$('#mOpen').onclick=loot;return;}loot();}
+function falseFire(){curChest=null;if(S.tok[5])stageQuiz(5);else codeDialog(5);}
+function endDialog(){if(S.ended){report(true);return;}if(fires.size){say('아직 불이 '+fires.size+'곳 남았다. 모두 끄고 다시 누르자.');return;}showQ('<div class="gtitle"><b>임무 완료 버튼</b></div><p>숲의 불을 모두 껐다. 임무를 마치면 보고서가 나오고 게임이 끝난다. 더 하고 싶으면 돌아가서 숲을 계속 지켜도 된다.</p><div class="frow"><button class="btn primary" id="mQgo">임무 마치기 (Enter)</button><button class="btn" id="mQno">더 지키기</button></div>');$('#mQno').onclick=closeQ;$('#mQgo').onclick=()=>{S.ended=true;save();report(true);};}
+function report(ending){const done=S.built.filter(Boolean).length,code=(()=>{const h=TK.h(S.sid+'|'+done+'|'+keep()+'|'+S.qc+'|'+S.qt+'|rp');let c='';for(let i=0;i<6;i++)c+=TK.ABC[(h>>>(5*i))&31];return c;})();
+showQ('<div class="gtitle"><b>'+(ending?(S.boss?'진짜 엔딩 · 산불의 근원을 껐다!':'임무 완료 · 숲을 지켰다!'):'임무 보고서')+'</b></div>'+(ending?'<p>코랩에서 만든 산불 이미지 분류 모델이 산불 감시 AI가 되어 숲을 지켰다. 빨간 지붕 집을 산불로 잘못 본 까닭이 데이터 편향성이라는 것도 밝혔다.'+(S.boss?' 땅속 깊은 곳의 불의 심장까지 꺼서, 이제 이 숲에는 산불이 나지 않는다.':'')+'</p>':'')+'<div class="summary"><div class="card-res"><span class="lab">학번</span><div class="big">'+S.sid+'</div></div><div class="card-res"><span class="lab">코랩 단계</span><div class="big">'+done+' / 6</div></div><div class="card-res"><span class="lab">숲 보존</span><div class="big">'+keep()+'%</div></div><div class="card-res"><span class="lab">감시 AI 정확도</span><div class="big">'+(S.built[4]?S.acc.toFixed(2):'-')+'</div></div><div class="card-res"><span class="lab">끈 불</span><div class="big">'+S.out+'곳</div></div>'+(S.built[5]?'<div class="card-res"><span class="lab">삽</span><div class="big">'+SV[S.sv]+'</div></div><div class="card-res"><span class="lab">불의 심장</span><div class="big">'+(S.boss?'껐다':'-')+'</div></div>':'')+'<div class="card-res"><span class="lab">문제 정답</span><div class="big">'+S.qc+' / '+S.qt+'</div></div><div class="card-res"><span class="lab">걸린 시간</span><div class="big">'+mmss()+'</div></div><div class="card-res"><span class="lab">결과 코드</span><div class="big">'+code+'</div></div></div><p class="need"><b>이 화면을 캡처해서 제출한다.</b></p><div class="frow"><button class="btn primary" id="mQgo">닫기</button></div>');$('#mQgo').onclick=closeQ;}
+function menu(){unlock();const m=$('#mMenu');if(!S.sid){m.innerHTML='<p><b>학번</b>을 입력하고 시작한다. 코랩 맨 위 힌트 채팅 셀에 넣은 학번과 같아야 인증 코드가 맞는다.</p><div class="frow"><input type="text" id="mSid" maxlength="8" placeholder="학번" autocomplete="off"><button class="btn primary" id="mStart">시작하기</button></div><div class="qfb"></div>';$('#mStart').onclick=()=>{const v=TK.sid($('#mSid').value);if(v.length<4){const fb=m.querySelector('.qfb');fb.className='qfb no';fb.textContent='학번을 숫자로 입력하자.';return;}S.sid=v;S.t0=Date.now();save();lock();};}
+else{m.innerHTML='<div class="frow"><button class="btn primary" id="mResume">계속하기</button><button class="btn" id="mRep">보고서</button><button class="btn" id="mReset">처음부터</button></div><p class="need">학번 '+S.sid+' · 화면을 클릭하면 마우스로 둘러볼 수 있고, Esc를 누르면 마우스가 풀린다. 이 메뉴가 떠 있는 동안에는 불이 번지지 않는다.</p>';$('#mResume').onclick=lock;$('#mRep').onclick=()=>report(false);$('#mReset').onclick=()=>{if(confirm('기록을 모두 지우고 처음부터 시작할까?')){try{localStorage.removeItem('wfBase')}catch(e){}location.reload();}};}
+$('#mPause').classList.add('on');}
+function loop(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(!qOpen&&!$('#mPause').classList.contains('on'))update(dt,ts);render(ts);requestAnimationFrame(loop);}
+function init(){if(!initGL()){alert('이 기기에서는 3D 화면을 열 수 없다.');return;}gen();$('#mine').classList.add('on');hud();menu();
+cv.addEventListener('mousedown',e=>{if(qOpen)return;if(!locked){lock();return;}if(e.button===0)click=true;if(e.button===2)bombKey=true;});cv.addEventListener('contextmenu',e=>e.preventDefault());cv.addEventListener('wheel',e=>{if(qOpen||!locked)return;S.sel=(S.sel+(e.deltaY>0?1:6))%7;},{passive:true});
+document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===cv;if(!locked){for(const k in keys)keys[k]=false;if(!qOpen)menu();}else $('#mPause').classList.remove('on');});
+document.addEventListener('mousemove',e=>{if(qOpen||!locked)return;pl.yaw-=e.movementX*.0026;pl.pitch=Math.max(-1.5,Math.min(1.5,pl.pitch-e.movementY*.0026));});
+addEventListener('keydown',e=>{if(qOpen){if(e.code==='Enter'&&$('#mQgo')){e.preventDefault();$('#mQgo').click();return;}if(e.target&&e.target.tagName==='INPUT')return;if(/^Digit[1-4]$/.test(e.code)){const b=$('#mQ').querySelectorAll('.qopts button')[+e.code.slice(5)-1];if(b)b.click();}return;}
+if(e.target&&e.target.tagName==='INPUT'){if(e.code==='Enter'&&$('#mStart'))$('#mStart').click();return;}if($('#mPause').classList.contains('on'))return;
+if(e.code==='KeyR'&&!e.repeat){surface();return;}if(/^Digit[1-7]$/.test(e.code)&&!e.repeat){S.sel=+e.code.slice(5)-1;const T=TOOLS[S.sel];say(has(S.sel)?T.n+' · '+T.d+'.':lockMsg(S.sel));}if(e.code==='KeyF'&&!e.repeat)click=true;if(e.code==='KeyE'&&!e.repeat)bombKey=true;if(e.code==='KeyQ'){menu();return;}keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();});
+addEventListener('keyup',e=>{keys[e.code]=false;});$('#mExit').onclick=menu;
+last=performance.now();requestAnimationFrame(loop);render(performance.now());}
+return {init,_:{S:()=>S,pl,X,D,HX,HZ,dig,surface,sparkAt,set,hint,pdist,build,get,act,update,render,construct,fires,items,addChest,chests,chestDialog,loot,refillQuiz,plant,useTool,TOOLS,falseFire,endDialog,bolt,trees,ignite:i=>ignite(i),idx,xyz,ROOFB,CHEST,BTN,ROOF,report,state:()=>({time,fires:fires.size,keep:keep(),qOpen,nVert,trees:trees.length,T0,rain:time<rainUntil,drone:!!drone,nextStorm,nextBolt,calm})}};
+})();
+WF.init();
+
+</script>
+</body></html>
