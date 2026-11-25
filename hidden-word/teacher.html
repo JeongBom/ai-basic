@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>히든 워드 · 출제자</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1><b>HIDDEN</b> WORD <span class="pill">출제자</span></h1>
+    <div class="row" style="margin:0">
+      <span id="modeBadge" class="pill"></span>
+      <span class="pill">참가 <b id="pCount">0</b>명</span>
+    </div>
+  </header>
+
+  <div id="loading" class="card center">단어 벡터를 불러오는 중…</div>
+
+  <!-- 방 만들기 -->
+  <div id="secRoom" class="card hide">
+    <h2>방 만들기</h2>
+    <div class="row"><button class="main" id="btnCreate">새 방 만들기</button><span class="msg" id="roomMsg"></span></div>
+  </div>
+
+  <!-- 방 정보 -->
+  <div id="secInfo" class="card hide">
+    <div class="row" style="justify-content:space-between">
+      <div><span class="sub">방 코드</span><br><span class="code" id="roomCode"></span></div>
+      <div class="grow sub">학생 접속 주소<br><span id="joinUrl" style="color:var(--txt);word-break:break-all"></span></div>
+      <button id="btnBoard">전체 점수 보기</button>
+    </div>
+  </div>
+
+  <!-- 새 히든 워드 -->
+  <div id="secLobby" class="card hide">
+    <h2><span id="nextNo"></span>번째 히든 워드 정하기</h2>
+    <div class="row">
+      <input type="password" id="secret" class="grow" placeholder="히든 워드 (화면에는 가려집니다)" autocomplete="off">
+      <button id="btnEye" title="누르고 있는 동안 보입니다">👁 누르는 동안 보기</button>
+    </div>
+    <div class="row">
+      <select id="cat">
+        <option value="gen">일반 단어</option>
+        <option value="ai">인공지능 기초 단어</option>
+      </select>
+      <label class="sub"><input type="checkbox" id="showCat"> 학생에게 분류 알려 주기</label>
+      <button id="btnRandAi">🎲 인공지능 기초 단어 무작위</button>
+    </div>
+    <details>
+      <summary>인공지능 기초 단어 목록에서 고르기 (누르면 위 칸에 가려진 채 들어갑니다)</summary>
+      <div class="chips" id="aiChips"></div>
+    </details>
+    <div class="row sub" style="margin-top:14px">
+      종료 유사도 <input type="number" id="setTh" min="30" max="100" step="1">% 이상
+      · 학생당 단어 <input type="number" id="setMax" min="1" max="10">개
+      · 단어 내는 시간 <input type="number" id="setHsec" min="10" max="900" step="10">초
+      · 정답 제한 <input type="number" id="setSec" min="10" max="600" step="5">초
+    </div>
+    <div class="row">
+      <button class="main" id="btnStart">이 단어로 시작</button>
+      <button id="btnFinal">게임 끝내기(최종 점수)</button>
+      <span class="msg" id="lobbyMsg"></span>
+    </div>
+    <div class="sub" id="histLine"></div>
+  </div>
+
+  <!-- 힌트 제시 -->
+  <div id="secHint" class="card hide">
+    <h2><span id="hintTitle"></span></h2>
+    <div class="timer" id="hTimer">0</div>
+    <p class="center">학생들이 단어를 내는 중 · 이번 차수 <b id="probeCount">0</b>개</p>
+    <div class="row" style="justify-content:center">
+      <button class="main" id="btnGuess">지금 정답 받기로</button>
+      <button id="btnNear">가장 유사한 단어 공개</button>
+    </div>
+    <details>
+      <summary>선생님 힌트 더하기</summary>
+      <div class="row">
+        <input type="text" id="hintIn" class="grow" placeholder="힌트 단어(명사)" autocomplete="off">
+        <button id="btnHint">힌트 내기</button>
+      </div>
+    </details>
+    <div class="msg" id="hintMsg"></div>
+  </div>
+
+  <!-- 정답 받는 중 -->
+  <div id="secGuess" class="card hide center">
+    <h2>정답 받는 중</h2>
+    <div class="timer" id="timer">0</div>
+    <div>제출 <b id="subCount">0</b> / <span id="subTotal">0</span>명</div>
+    <div class="row" style="justify-content:center"><button id="btnClose">지금 마감</button></div>
+  </div>
+
+  <!-- 결과 -->
+  <div id="secResult" class="card hide">
+    <h2 id="resTitle"></h2>
+    <div id="resBody"></div>
+    <div class="row"><button class="main" id="btnNext"></button><button id="btnReveal">정답 공개하고 이 단어 끝내기</button></div>
+  </div>
+
+  <!-- 힌트 목록 -->
+  <div id="secHints" class="card hide">
+    <div class="row" style="justify-content:space-between;margin-top:0"><h2 style="margin:0">단어와 유사도</h2><button id="btnSort"></button></div>
+    <div id="hintList"></div>
+  </div>
+
+  <!-- 점수판 -->
+  <div id="secBoard" class="card hide">
+    <h2>전체 점수</h2>
+    <div id="board"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+const $ = HW.$, esc = HW.esc;
+// 인공지능 기초 단어 후보(단어 벡터에 있는 것만 단추로 나옵니다). 자유롭게 고쳐 쓰세요.
+const AI_WORDS = ("인공지능 지능 에이전트 탐색 추론 지식 학습 기계학습 머신러닝 딥러닝 데이터 속성 빅데이터 분류 회귀 군집 예측 모델 훈련 평가 정확도 정밀도 " +
+  "보상 신경망 인공신경망 뉴런 가중치 편향 편향성 활성화 손실 오차 최적화 알고리즘 센서 인식 음성인식 자연어 챗봇 자율주행 로봇 " +
+  "휴리스틱 이미지 픽셀 정규화 전처리 시각화 상관관계 특징 레이블 윤리 공정성 투명성 개인정보 저작권 일자리 프롬프트 토큰 에포크 의사결정 " +
+  "벡터 유사도 확률 통계 함수 행렬 매개변수 변수 검증 튜링 컴퓨터 프로그램 정보 문제 해결 판단 규칙 패턴").split(" ");
+
+let R = null, S = null, secret = "", players = {}, scores = {}, subs = {}, unsubSubs = null, subsKey = null, closing = false, boardOn = false, bySim = false;
+let unsubPr = null, prKey = null, done = new Set(), okCnt = {}, queue = Promise.resolve(), moving = false;
+const base = () => "rooms/" + R;
+const defaults = { th: 95, max: 3, hsec: 120, sec: 60 };
+
+function show(id, on) { $(id).classList.toggle("hide", !on); }
+function setSecret(w) { secret = w; if (R) localStorage.setItem("hw_secret_" + R, w); }
+
+async function boot() {
+  $("modeBadge").textContent = HW.mode === "firebase" ? "실시간 연결" : "한 PC 시험 모드";
+  try {
+    await HW.init();
+    const n = await HW.loadVec();
+    console.log("단어 수", n);
+  } catch (e) {
+    $("loading").innerHTML = "불러오지 못했습니다: " + esc(e.message) + "<br><span class='sub'>이 페이지는 웹 주소(https://…)로 열어야 합니다.</span>";
+    return;
+  }
+  show("loading", false);
+  $("aiChips").innerHTML = AI_WORDS.filter(HW.has).map(w => `<button data-w="${w}">${w}</button>`).join("");
+  const s = JSON.parse(localStorage.getItem("hw_set4") || "null") || defaults;
+  $("setTh").value = s.th; $("setMax").value = s.max; $("setHsec").value = s.hsec; $("setSec").value = s.sec;
+  const saved = localStorage.getItem("hw_room");
+  if (saved && (await HW.get("rooms/" + saved + "/host")) === HW.uid) return enter(saved);
+  show("secRoom", true);
+}
+
+async function createRoom() {
+  $("roomMsg").textContent = "";
+  for (let i = 0; i < 20; i++) {
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    if ((await HW.get("rooms/" + code + "/host")) == null) {
+      await HW.set("rooms/" + code + "/host", HW.uid);
+      await HW.set("rooms/" + code + "/state", { phase: "lobby", no: 0, t: HW.now() });
+      localStorage.setItem("hw_room", code);
+      return enter(code);
+    }
+  }
+  $("roomMsg").textContent = "방을 만들지 못했습니다. 다시 눌러 주세요.";
+}
+
+function enter(code) {
+  R = code;
+  secret = localStorage.getItem("hw_secret_" + R) || "";
+  show("secRoom", false); show("secInfo", true);
+  $("roomCode").textContent = R;
+  $("joinUrl").textContent = location.href.replace(/teacher\.html.*$/, "") + "?room=" + R;
+  HW.on(base() + "/state", v => { S = v || { phase: "lobby", no: 0 }; render(); });
+  HW.on(base() + "/players", v => { players = v || {}; $("pCount").textContent = Object.keys(players).length; render(); });
+  HW.on(base() + "/scores", v => { scores = v || {}; renderBoard(); });
+  setInterval(tick, 250);
+}
+
+function watchSubs() {
+  const key = S && S.phase === "guess" ? S.key : null;
+  if (key === subsKey) return;
+  if (unsubSubs) { unsubSubs(); unsubSubs = null; }
+  subsKey = key; subs = {};
+  if (key) unsubSubs = HW.on(base() + "/subs/" + key, v => { if (subsKey !== key) return; subs = v || {}; $("subCount").textContent = Object.keys(subs).length; });
+}
+
+function stageHints() { return HW.list(S.hints).filter(h => h.st === S.stage && !h.auto); }
+
+// 학생이 낸 단어를 받아 유사도를 계산하고 모두에게 공유
+async function watchProbes() {
+  const key = S && S.phase === "hint" ? S.key : null;
+  if (key === prKey) return;
+  if (unsubPr) { unsubPr(); unsubPr = null; }
+  prKey = key; done = new Set(); okCnt = {};
+  if (!key) return;
+  const pv = (await HW.get(base() + "/priv")) || {};
+  if (prKey !== key) return;
+  for (const u in pv) {
+    const rs = pv[u] && pv[u][key];
+    for (const n in (rs || {})) { if (rs[n] == null) continue; done.add(u + "/" + n); if (rs[n].st === "ok") okCnt[u] = (okCnt[u] || 0) + 1; }
+  }
+  unsubPr = HW.on(base() + "/probes/" + key, v => {
+    if (prKey !== key) return;          // 이미 지나간 차수의 알림은 무시
+    const items = [];
+    for (const u in (v || {})) for (const n in v[u]) {
+      if (v[u][n] == null || done.has(u + "/" + n)) continue;
+      done.add(u + "/" + n);
+      items.push({ u, n, w: HW.norm(v[u][n].w), t: v[u][n].t || 0 });
+    }
+    items.sort((a, b) => a.t - b.t);
+    items.forEach(it => { queue = queue.then(() => handleProbe(key, it)).catch(e => console.warn(e)); });
+  });
+}
+async function handleProbe(key, it) {
+  const reply = r => HW.set(base() + "/priv/" + it.u + "/" + key + "/" + it.n, r);
+  if (!S || S.phase !== "hint" || S.key !== key) return reply({ st: "late" });
+  const w = it.w;
+  if (!secret) return reply({ st: "bad" });
+  if (w === secret) return reply({ st: "found" });          // 히든 워드 자체는 공유하지 않고 그 학생만 알게 함
+  if (!HW.isWord(w) || !HW.has(w) || w.includes(secret) || secret.includes(w)) return reply({ st: "bad" });
+  if ((okCnt[it.u] || 0) >= S.max) return reply({ st: "full" });
+  const hs = HW.list(S.hints);
+  if (hs.some(h => h.w === w)) return reply({ st: "dup" });
+  const s = HW.sim(secret, w);
+  okCnt[it.u] = (okCnt[it.u] || 0) + 1;
+  hs.push({ w, s, st: S.stage });
+  await HW.update(base() + "/state", { hints: hs });
+  await reply({ st: "ok", w, s });
+  if (s >= S.th) await startGuess();                          // 기준을 넘는 단어가 나오면 바로 정답 받기로
+}
+
+function render() {
+  if (!S) return;
+  const ph = S.phase;
+  show("secLobby", ph === "lobby"); show("secHint", ph === "hint"); show("secGuess", ph === "guess");
+  show("secResult", ph === "result" || ph === "final");
+  show("secHints", ph !== "lobby" && ph !== "final" && HW.list(S.hints).length > 0);
+  watchSubs(); watchProbes();
+  if (ph === "lobby") {
+    $("nextNo").textContent = (S.no || 0) + 1;
+    const h = HW.list(S.history);
+    $("histLine").innerHTML = h.length ? "지금까지: " + h.map(x => `${x.no}. ${esc(x.answer)}${x.cat === "ai" ? " <span class='pill ai'>인공지능 기초</span>" : ""} (${x.correct}명 정답)`).join(" · ") : "";
+  }
+  if (ph === "hint") {
+    $("hintTitle").textContent = `${S.no}번째 단어 · ${S.stage}차 (맞히면 ${HW.pts(S.stage)}점) · 학생당 ${S.max}개`;
+    $("probeCount").textContent = stageHints().length;
+    if (!secret) $("hintMsg").textContent = "이 PC에 히든 워드가 남아 있지 않습니다. 결과 화면까지 진행한 뒤 새 단어로 시작해 주세요.";
+  }
+  if (ph === "guess") $("subTotal").textContent = Object.keys(players).length;
+  if (ph === "result") {
+    const r = S.result || {};
+    $("resTitle").textContent = r.ended ? `${S.no}번째 단어 끝` : `${S.stage}차 결과`;
+    let h = "";
+    if (r.ended) h += `<div class="sub center">히든 워드</div><div class="big accc">${esc(r.answer)}</div>`;
+    h += `<p class="center">${r.correct ? `<b class="okc">${r.correct}명 정답</b> (각 ${r.pts}점)` : `<b class="noc">정답자 없음</b>`} · 제출 ${r.total || 0}명</p>`;
+    h += wordsHtml(r);
+    $("resBody").innerHTML = h;
+    $("btnNext").textContent = r.ended ? "다음 단어 정하기" : `한 차수 더 하기 (${S.stage + 1}차, 맞히면 ${HW.pts(S.stage + 1)}점)`;
+    $("btnReveal").classList.toggle("hide", !!r.ended);
+  }
+  if (ph === "final") {
+    $("resTitle").textContent = "게임 종료";
+    $("resBody").innerHTML = "<p class='center'>학생 화면에 각자의 최종 점수가 표시됩니다.</p>";
+    $("btnNext").textContent = "게임 이어서 하기";
+    $("btnReveal").classList.add("hide");
+    boardOn = true;
+  }
+  renderHints(); renderBoard();
+}
+
+function wordsHtml(r) {
+  const ws = HW.list(r.words);
+  if (!ws.length) return "";
+  return `<div class="words">` + ws.map(x => `<span class="${r.ended && x.w === r.answer ? "ok" : ""}">${esc(x.w)}<b>${x.c}</b></span>`).join("") + `</div>`;
+}
+
+function renderHints() {
+  $("hintList").innerHTML = HW.hintsHtml(HW.list(S.hints), S.th, bySim);
+  $("btnSort").textContent = bySim ? "낸 순서로 보기" : "유사도순으로 보기";
+}
+
+function renderBoard() {
+  show("secBoard", boardOn && !!R);
+  $("btnBoard").textContent = boardOn ? "전체 점수 숨기기" : "전체 점수 보기";
+  if (!boardOn || !S) return;
+  const nos = []; for (let i = 1; i <= (S.no || 0); i++) nos.push(i);
+  const rows = Object.keys(players).map(u => ({ u, name: players[u].name || "?", sc: scores[u] || {} }))
+    .sort((a, b) => (b.sc.total || 0) - (a.sc.total || 0) || String(a.name).localeCompare(String(b.name)));
+  let h = `<table><tr><th>순위</th><th>학번</th>${nos.map(n => `<th>${n}번</th>`).join("")}<th>총점</th></tr>`;
+  let rank = 0, prev = null;
+  rows.forEach((r, i) => {
+    const t = r.sc.total || 0; if (t !== prev) { rank = i + 1; prev = t; }
+    const w = r.sc.w || {};
+    h += `<tr><td>${rank}</td><td>${esc(r.name)}</td>${nos.map(n => `<td>${w[n] != null ? w[n] : "·"}</td>`).join("")}<td><b>${t}</b></td></tr>`;
+  });
+  $("board").innerHTML = rows.length ? h + "</table>" : "<p class='sub'>아직 참가자가 없습니다.</p>";
+}
+
+// ---- 진행 ----
+async function startWord() {
+  const w = HW.norm($("secret").value), m = $("lobbyMsg");
+  m.textContent = "";
+  if (!HW.isWord(w)) return m.textContent = "한글 단어 하나를 입력해 주세요.";
+  if (!HW.has(w)) return m.textContent = "단어 벡터에 없는 단어입니다. 다른 단어를 골라 주세요.";
+  const set = { th: +$("setTh").value || defaults.th, max: Math.max(1, Math.min(10, +$("setMax").value || defaults.max)),
+    hsec: Math.max(10, +$("setHsec").value || defaults.hsec), sec: Math.max(10, +$("setSec").value || defaults.sec) };
+  localStorage.setItem("hw_set4", JSON.stringify(set));
+  setSecret(w); $("secret").value = "";
+  const cat = $("cat").value;
+  await HW.update(base() + "/state", {
+    phase: "hint", no: (S.no || 0) + 1, stage: 1, key: ((S.no || 0) + 1) + "_1", hints: null, result: null, deadline: HW.now() + set.hsec * 1000,
+    th: set.th, max: set.max, hsec: set.hsec, sec: set.sec, cat: cat, catShown: $("showCat").checked ? cat : null
+  });
+}
+
+async function addHint() {
+  const w = HW.norm($("hintIn").value), m = $("hintMsg");
+  m.textContent = "";
+  if (!secret) return;
+  if (!HW.isWord(w)) return m.textContent = "한글 단어 하나를 입력해 주세요.";
+  if (w.includes(secret) || secret.includes(w)) return m.textContent = "히든 워드가 들어 있는 단어는 힌트로 쓸 수 없습니다.";
+  if (!HW.has(w)) return m.textContent = "단어 벡터에 없는 단어입니다.";
+  $("hintIn").value = "";
+  queue = queue.then(async () => {
+    const hs = HW.list(S.hints);
+    if (hs.some(h => h.w === w)) { m.textContent = "이미 나온 단어입니다."; return; }
+    const s = HW.sim(secret, w);
+    hs.push({ w, s, st: S.stage, tch: 1 });
+    await HW.update(base() + "/state", { hints: hs });
+    if (s >= S.th) await startGuess();
+  });
+  return queue;
+}
+
+function nearestOne(hs) {
+  const used = new Set(hs.map(h => h.w));
+  return HW.nearest(secret, 1, w => used.has(w))[0];
+}
+async function revealNear() {
+  if (!secret) return;
+  const hs = HW.list(S.hints), nb = nearestOne(hs);
+  if (!nb) return;
+  hs.push({ w: nb.w, s: nb.s, st: S.stage, auto: true });
+  await HW.update(base() + "/state", { hints: hs });
+}
+
+async function startGuess() {
+  if (moving || !S || S.phase !== "hint") return;
+  moving = true;
+  try { await HW.update(base() + "/state", { phase: "guess", deadline: HW.now() + S.sec * 1000 }); }
+  finally { moving = false; }
+}
+
+async function closeGuess() {
+  if (closing || !S || S.phase !== "guess") return;
+  closing = true;
+  try {
+    const all = (await HW.get(base() + "/subs/" + S.key)) || {};
+    const cnt = {}, winners = [];
+    for (const u in all) {
+      const w = HW.norm(all[u] && all[u].w);
+      if (!HW.isWord(w)) continue;
+      cnt[w] = (cnt[w] || 0) + 1;
+      if (secret && w === secret) winners.push(u);
+    }
+    // 단어 내는 단계에서 히든 워드를 찾아낸 학생도 정답자
+    let extra = 0;
+    const pv = (await HW.get(base() + "/priv")) || {};
+    for (const u in pv) {
+      let f = false;
+      for (const k in (pv[u] || {})) {
+        if (k.split("_")[0] !== String(S.no)) continue;
+        for (const n in pv[u][k]) if (pv[u][k][n] && pv[u][k][n].st === "found") f = true;
+      }
+      if (f && secret && !winners.includes(u)) {
+        winners.push(u);
+        if (!(u in all)) { cnt[secret] = (cnt[secret] || 0) + 1; extra++; }
+      }
+    }
+    const pts = HW.pts(S.stage), ended = winners.length > 0;   // 못 맞히면 선생님이 차수를 더할지 정함
+    const up = {};
+    winners.forEach(u => {
+      const w = Object.assign({}, (scores[u] || {}).w); w[S.no] = pts;
+      up["scores/" + u] = { w, total: Object.values(w).reduce((a, b) => a + b, 0) };
+    });
+    up["state/phase"] = "result";
+    up["state/result"] = {
+      words: Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(([w, c]) => ({ w, c })),
+      correct: winners.length, total: Object.keys(all).length + extra, ended, pts, answer: ended ? secret : null
+    };
+    if (ended) up["state/history"] = HW.list(S.history).concat([{ no: S.no, answer: secret, cat: S.cat || "gen", stage: S.stage, correct: winners.length }]);
+    await HW.update(base(), up);
+  } finally { closing = false; }
+}
+
+// 아무도 못 맞힌 채로 정답을 공개하고 이 단어를 끝냄
+async function revealAnswer() {
+  if (!S || S.phase !== "result" || (S.result || {}).ended || !secret) return;
+  const r = Object.assign({}, S.result, { ended: true, answer: secret });
+  await HW.update(base() + "/state", {
+    result: r,
+    history: HW.list(S.history).concat([{ no: S.no, answer: secret, cat: S.cat || "gen", stage: S.stage, correct: 0 }])
+  });
+}
+
+async function next() {
+  if (S.phase === "final") return HW.update(base() + "/state", { phase: "lobby" });
+  const r = S.result || {};
+  if (r.ended) { setSecret(""); return HW.update(base() + "/state", { phase: "lobby" }); }
+  await HW.update(base() + "/state", { phase: "hint", stage: S.stage + 1, key: S.no + "_" + (S.stage + 1), result: null, deadline: HW.now() + S.hsec * 1000 });
+}
+
+function tick() {
+  if (!S || !S.deadline) return;
+  const left = Math.max(0, Math.ceil((S.deadline - HW.now()) / 1000));
+  if (S.phase === "hint") {
+    $("hTimer").textContent = Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0");
+    if (HW.now() >= S.deadline) startGuess();
+  } else if (S.phase === "guess") {
+    $("timer").textContent = left;
+    if (HW.now() >= S.deadline) closeGuess();
+  }
+}
+
+// ---- 단추 ----
+$("btnCreate").onclick = createRoom;
+$("btnStart").onclick = startWord;
+$("btnHint").onclick = addHint;
+$("hintIn").onkeydown = e => { if (e.key === "Enter") addHint(); };
+$("btnGuess").onclick = startGuess;
+$("btnNear").onclick = revealNear;
+$("btnClose").onclick = closeGuess;
+$("btnNext").onclick = next;
+$("btnReveal").onclick = revealAnswer;
+$("btnFinal").onclick = () => HW.update(base() + "/state", { phase: "final" });
+$("btnSort").onclick = () => { bySim = !bySim; renderHints(); };
+$("btnBoard").onclick = () => { boardOn = !boardOn; renderBoard(); };
+const eye = $("btnEye"), sec = $("secret");
+["mousedown", "touchstart"].forEach(ev => eye.addEventListener(ev, e => { e.preventDefault(); sec.type = "text"; }));
+["mouseup", "mouseleave", "touchend"].forEach(ev => eye.addEventListener(ev, () => { sec.type = "password"; }));
+$("btnRandAi").onclick = () => {
+  const c = AI_WORDS.filter(HW.has);
+  sec.value = c[Math.floor(Math.random() * c.length)]; $("cat").value = "ai";
+  $("lobbyMsg").textContent = "";
+};
+$("aiChips").onclick = e => { const w = e.target.dataset && e.target.dataset.w; if (w) { sec.value = w; $("cat").value = "ai"; } };
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>히든 워드</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap narrow">
+  <header class="top">
+    <h1><b>HIDDEN</b> WORD</h1>
+    <div class="row hide" id="me" style="margin:0">
+      <span class="pill" id="myName"></span>
+      <span class="pill acc">내 총점 <b id="myTotal">0</b>점</span>
+    </div>
+  </header>
+
+  <div id="loading" class="card center">연결하는 중…</div>
+
+  <!-- 입장 -->
+  <div id="secJoin" class="card hide">
+    <h2>입장하기</h2>
+    <div class="row"><input type="text" id="inRoom" class="grow" inputmode="numeric" maxlength="4" placeholder="방 코드 4자리"></div>
+    <div class="row"><input type="text" id="inName" class="grow" maxlength="12" placeholder="학번"></div>
+    <div class="row"><button class="main grow" id="btnJoin">들어가기</button></div>
+    <div class="msg" id="joinMsg"></div>
+  </div>
+
+  <!-- 진행 상태 -->
+  <div id="secMain" class="card hide">
+    <div id="mainBody"></div>
+  </div>
+
+  <!-- 공유된 단어 목록 -->
+  <div id="secHints" class="card hide">
+    <div class="row" style="justify-content:space-between;margin-top:0">
+      <h2 style="margin:0">단어와 유사도 <span id="catBadge"></span></h2>
+      <button id="btnSort"></button>
+    </div>
+    <div id="hintList"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+const $ = HW.$, esc = HW.esc;
+let R = null, S = null, mySub = null, myScore = {}, myPriv = {}, unsubMy = null, subKey = null, lastPhaseKey = "";
+let sent = {}, waiting = false, bySim = false;
+const base = () => "rooms/" + R;
+function show(id, on) { $(id).classList.toggle("hide", !on); }
+
+async function boot() {
+  try { await HW.init(); } catch (e) { $("loading").textContent = "연결하지 못했습니다: " + e.message; return; }
+  show("loading", false);
+  const q = new URLSearchParams(location.search).get("room");
+  const saved = JSON.parse(localStorage.getItem("hw_me") || "null");
+  if (q) $("inRoom").value = q;
+  if (saved) {
+    $("inName").value = saved.name;
+    if (!q || q === saved.room) { $("inRoom").value = saved.room; if (await join(true)) return; }
+  }
+  show("secJoin", true);
+}
+
+async function join(quiet) {
+  const room = $("inRoom").value.trim(), name = $("inName").value.trim(), m = $("joinMsg");
+  m.textContent = "";
+  if (!/^\d{4}$/.test(room)) { if (!quiet) m.textContent = "방 코드 4자리를 입력해 주세요."; return false; }
+  if (!name) { if (!quiet) m.textContent = "학번을 입력해 주세요."; return false; }
+  if ((await HW.get("rooms/" + room + "/host")) == null) { if (!quiet) m.textContent = "그런 방이 없습니다. 방 코드를 확인해 주세요."; return false; }
+  R = room;
+  await HW.set(base() + "/players/" + HW.uid, { name: name.slice(0, 12) });
+  localStorage.setItem("hw_me", JSON.stringify({ room, name }));
+  show("secJoin", false); show("me", true); show("secMain", true);
+  $("myName").textContent = name;
+  HW.on(base() + "/state", v => { S = v || { phase: "lobby", no: 0 }; watchMySub(); render(); });
+  HW.on(base() + "/scores/" + HW.uid, v => { myScore = v || {}; $("myTotal").textContent = myScore.total || 0; render(); });
+  HW.on(base() + "/priv/" + HW.uid, v => { myPriv = v || {}; waiting = false; render(); });
+  setInterval(tick, 250);
+  return true;
+}
+
+// 내가 낸 답은 차수(key)마다 따로 읽어 옴 — 새로 고침해도 남아 있음
+function watchMySub() {
+  const key = S && S.key ? S.key : null;
+  if (key === subKey) return;
+  if (unsubMy) { unsubMy(); unsubMy = null; }
+  subKey = key; mySub = null;
+  if (key) unsubMy = HW.on(base() + "/subs/" + key + "/" + HW.uid, v => { if (subKey !== key) return; mySub = v ? HW.norm(v.w) : null; render(); });
+}
+
+// 이번 차수에 내가 낸 단어에 대한 응답들
+function myResp() { return S && S.key ? HW.list(myPriv[S.key]) : []; }
+// 이번 단어에서 히든 워드를 이미 찾아냈는지
+function found() {
+  if (!S) return false;
+  for (const k in myPriv) if (k.split("_")[0] === String(S.no) && HW.list(myPriv[k]).some(r => r.st === "found")) return true;
+  return false;
+}
+
+function render() {
+  if (!S) return;
+  const ph = S.phase, b = $("mainBody"), rs = myResp(), fd = found();
+  const hs = HW.list(S.hints);
+  show("secHints", hs.length > 0 && ph !== "lobby" && ph !== "final");
+  $("hintList").innerHTML = HW.hintsHtml(hs, S.th || 100, bySim);
+  $("btnSort").textContent = bySim ? "낸 순서로 보기" : "유사도순으로 보기";
+  $("catBadge").innerHTML = S.catShown === "ai" ? `<span class="pill ai">인공지능 기초 단어</span>` : S.catShown === "gen" ? `<span class="pill">일반 단어</span>` : "";
+  const pk = [ph, S.key || "", mySub || "", myScore.total || 0, S.result ? (S.result.ended ? 2 : 1) : 0, rs.length, fd ? 1 : 0].join("|");
+  if (pk === lastPhaseKey) return;      // 입력 중인 칸이 지워지지 않게
+  lastPhaseKey = pk;
+  const pts = S.stage ? HW.pts(S.stage) : 0;
+  if (ph === "lobby") {
+    b.innerHTML = `<p class="center">선생님이 ${(S.no || 0) + 1}번째 히든 워드를 정하고 있습니다…</p>`;
+  } else if (ph === "hint") {
+    const left = Math.max(0, (S.max || 3) - rs.filter(r => r.st === "ok").length);
+    const last = rs[rs.length - 1];
+    let h = `<h2>${S.no}번째 단어 · ${S.stage}차 (맞히면 ${pts}점)</h2><div class="timer" id="timer"></div>`;
+    if (fd) {
+      h += `<p class="center"><b class="okc">히든 워드를 찾았습니다!</b><br>다른 친구에게는 비밀입니다. 정답은 자동으로 제출됩니다.</p>`;
+    } else if (left > 0) {
+      h += `<p>단어를 내면 히든 워드와 얼마나 비슷한지 계산되어 <b>모두에게 공유</b>됩니다. 남은 횟수 <b class="accc">${left}</b> / ${S.max || 3}</p>
+        <div class="row"><input type="text" id="probe" class="grow" maxlength="10" placeholder="단어(명사)" autocomplete="off">
+        <button class="main" id="btnProbe">내기</button></div>`;
+    } else {
+      h += `<p class="center">단어를 모두 냈습니다. 아래 유사도를 보고 히든 워드를 짐작해 보세요.</p>`;
+    }
+    let fb = "";
+    if (last && !fd) {
+      if (last.st === "ok") fb = `<span class="okc">「${esc(last.w)}」 유사도 ${last.s.toFixed(2)}% — 공유되었습니다.</span>`;
+      else if (last.st === "dup") fb = "이미 나온 단어입니다. 횟수는 줄지 않습니다.";
+      else if (last.st === "bad") fb = "쓸 수 없는 단어입니다. 다른 단어를 내 보세요. 횟수는 줄지 않습니다.";
+    }
+    h += `<div class="msg" id="probeMsg">${fb}</div>`;
+    b.innerHTML = h;
+    if ($("btnProbe")) {
+      $("btnProbe").onclick = probe;
+      $("probe").onkeydown = e => { if (e.key === "Enter") probe(); };
+    }
+    tick();
+  } else if (ph === "guess") {
+    if (fd) {
+      b.innerHTML = `<h2>정답 제출 완료</h2><p class="center"><b class="okc">히든 워드를 이미 찾았습니다.</b><br>자동으로 제출됩니다.</p><div class="timer" id="timer"></div>`;
+    } else if (mySub) {
+      b.innerHTML = `<h2>정답 제출 완료</h2><div class="big">${esc(mySub)}</div>
+        <p class="center sub">모두 낼 때까지 기다려 주세요.</p><div class="timer" id="timer"></div>`;
+    } else {
+      b.innerHTML = `<h2>${S.no}번째 단어 · ${S.stage}차 정답 (맞히면 ${pts}점)</h2>
+        <div class="timer" id="timer"></div>
+        <div class="row"><input type="text" id="ans" class="grow" maxlength="10" placeholder="히든 워드라고 생각하는 단어" autocomplete="off">
+        <button class="main" id="btnSub">제출</button></div>
+        <div class="sub">한 번만 낼 수 있습니다.</div><div class="msg" id="subMsg"></div>`;
+      $("btnSub").onclick = submit;
+      $("ans").onkeydown = e => { if (e.key === "Enter") submit(); };
+    }
+    tick();
+  } else if (ph === "result") {
+    const r = S.result || {};
+    const ok = r.ended && (fd || (mySub && mySub === r.answer));
+    let h = "";
+    if (r.ended) h += `<div class="sub center">히든 워드</div><div class="big accc">${esc(r.answer)}</div>`;
+    if (ok) h += `<p class="center"><b class="okc">정답! +${r.pts}점</b></p>`;
+    else if (mySub) h += `<p class="center"><b class="noc">아쉽습니다.</b> 내가 낸 답: ${esc(mySub)}</p>`;
+    else h += `<p class="center sub">이번에는 답을 내지 않았습니다.</p>`;
+    h += `<p class="center sub">${r.correct ? r.correct + "명이 맞혔습니다." : "아무도 맞히지 못했습니다."}${r.ended ? "" : " 선생님이 다음 진행을 정하고 있습니다."}</p>`;
+    const ws = HW.list(r.words);
+    if (ws.length) h += `<div class="sub">모두가 낸 답</div><div class="words">` +
+      ws.map(x => `<span class="${r.ended && x.w === r.answer ? "ok" : ""}">${esc(x.w)}<b>${x.c}</b></span>`).join("") + `</div>`;
+    b.innerHTML = h;
+  } else if (ph === "final") {
+    const w = myScore.w || {};
+    let rows = ""; for (let i = 1; i <= (S.no || 0); i++) rows += `<tr><td>${i}번 단어</td><td>${w[i] != null ? w[i] + "점" : "·"}</td></tr>`;
+    b.innerHTML = `<h2 class="center">게임 종료</h2><div class="sub center">내 최종 점수</div>
+      <div class="big accc">${myScore.total || 0}점</div><table>${rows}</table>`;
+  }
+}
+
+// 단어 내기: 선생님 PC가 유사도를 계산해 모두에게 공유
+async function probe() {
+  const w = HW.norm($("probe").value), m = $("probeMsg");
+  if (waiting) return;
+  if (!HW.isWord(w)) return m.textContent = "한글 단어 하나를 입력해 주세요.";
+  if (S.phase !== "hint" || HW.now() > S.deadline) return m.textContent = "단어 내는 시간이 끝났습니다.";
+  const key = S.key, n = Math.max(myResp().length, sent[key] || 0);
+  if (n > 9) return m.textContent = "더 낼 수 없습니다.";
+  sent[key] = n + 1; waiting = true;
+  $("btnProbe").disabled = true; m.textContent = "계산하는 중…";
+  try { await HW.set(base() + "/probes/" + key + "/" + HW.uid + "/" + n, { w, t: HW.now() }); }
+  catch (e) { waiting = false; m.textContent = "보내지 못했습니다. 다시 눌러 주세요."; $("btnProbe").disabled = false; }
+  setTimeout(() => { if (waiting) { waiting = false; const b = $("btnProbe"); if (b) { b.disabled = false; $("probeMsg").textContent = "응답이 늦습니다. 다시 내 보세요."; } } }, 6000);
+}
+
+async function submit() {
+  const w = HW.norm($("ans").value), m = $("subMsg");
+  if (!HW.isWord(w)) return m.textContent = "한글 단어 하나를 입력해 주세요.";
+  if (S.phase !== "guess" || HW.now() > S.deadline) return m.textContent = "제출 시간이 끝났습니다.";
+  $("btnSub").disabled = true;
+  try { await HW.set(base() + "/subs/" + S.key + "/" + HW.uid, { w, t: HW.now() }); }
+  catch (e) { m.textContent = "제출하지 못했습니다. 다시 눌러 주세요."; $("btnSub").disabled = false; }
+}
+
+function tick() {
+  const t = $("timer");
+  if (!t || !S || !S.deadline) return;
+  const left = Math.max(0, Math.ceil((S.deadline - HW.now()) / 1000));
+  t.textContent = S.phase === "hint" ? Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0") : S.phase === "guess" ? left : "";
+}
+
+$("btnJoin").onclick = () => join(false);
+$("inName").onkeydown = e => { if (e.key === "Enter") join(false); };
+$("btnSort").onclick = () => { bySim = !bySim; lastPhaseKey = ""; render(); };
+boot();
+</script>
+</body>
+</html>
