@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>히든 워드</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <div class="wrap narrow">
@@ -13,6 +13,7 @@
     <div class="row hide" id="me" style="margin:0">
       <span class="pill" id="myName"></span>
       <span class="pill acc">내 총점 <b id="myTotal">0</b>점</span>
+      <span class="pill">선생님 <b id="tTotal">0</b>점</span>
     </div>
   </header>
 
@@ -42,8 +43,8 @@
   </div>
 </div>
 
-<script src="config.js?v=5"></script>
-<script src="common.js?v=5"></script>
+<script src="config.js?v=6"></script>
+<script src="common.js?v=6"></script>
 <script>
 const $ = HW.$, esc = HW.esc;
 let R = null, S = null, mySub = null, myScore = {}, myPriv = {}, unsubMy = null, subKey = null, lastPhaseKey = "";
@@ -75,7 +76,7 @@ async function join(quiet) {
   localStorage.setItem("hw_me", JSON.stringify({ room, name }));
   show("secJoin", false); show("me", true); show("secMain", true);
   $("myName").textContent = name;
-  HW.on(base() + "/state", v => { S = v || { phase: "lobby", no: 0 }; watchMySub(); render(); });
+  HW.on(base() + "/state", v => { S = v || { phase: "lobby", no: 0 }; $("tTotal").textContent = (S.tsc || {}).total || 0; watchMySub(); render(); });
   HW.on(base() + "/scores/" + HW.uid, v => { myScore = v || {}; $("myTotal").textContent = myScore.total || 0; render(); });
   HW.on(base() + "/priv/" + HW.uid, v => { myPriv = v || {}; waiting = false; render(); });
   setInterval(tick, 250);
@@ -167,7 +168,7 @@ function render() {
       h += `<p class="center"><b class="noc">아쉽습니다.</b> 내가 낸 답: ${esc(mySub)}${mine ? ` <span class="accc">(유사도 ${HW.simText(mine.s)})</span>` : ""}</p>`;
     }
     else h += `<p class="center sub">이번에는 답을 내지 않았습니다.</p>`;
-    h += `<p class="center sub">${r.correct ? r.correct + "명이 맞혔습니다." : "아무도 맞히지 못했습니다."}${r.ended ? "" : " 선생님이 다음 진행을 정하고 있습니다."}</p>`;
+    h += `<p class="center sub">${r.correct ? r.correct + "명이 맞혔습니다." : "아무도 맞히지 못했습니다. 선생님이 " + HW.TPTS + "점을 얻었습니다."}${r.ended ? "" : " 선생님이 다음 진행을 정하고 있습니다."}</p>`;
     const ws = HW.list(r.words);
     if (ws.length) h += `<div class="sub">모두가 낸 답</div><div class="words">` +
       ws.map(x => `<span class="${r.ended && x.w === r.answer ? "ok" : ""}">${esc(x.w)}<b>${x.c}명 · ${HW.simText(x.s)}</b></span>`).join("") + `</div>`;
@@ -176,7 +177,8 @@ function render() {
     const w = myScore.w || {};
     let rows = ""; for (let i = 1; i <= (S.no || 0); i++) rows += `<tr><td>${i}번 단어</td><td>${w[i] != null ? w[i] + "점" : "·"}</td></tr>`;
     b.innerHTML = `<h2 class="center">게임 종료</h2><div class="sub center">내 최종 점수</div>
-      <div class="big accc">${myScore.total || 0}점</div><table>${rows}</table>`;
+      <div class="big accc">${myScore.total || 0}점</div><table>${rows}</table>
+      <p class="center sub">선생님(출제자) 점수 ${(S.tsc || {}).total || 0}점</p>`;
   }
 }
 

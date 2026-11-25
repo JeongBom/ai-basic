@@ -87,6 +87,7 @@ const HW = {};
   HW.esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   HW.pts = stage => Math.max(1, 4 - stage);   // 1차 3점, 2차 2점, 3차부터 1점
   HW.$ = id => document.getElementById(id);
+  HW.TPTS = 1;   // 아무도 못 맞힌 차수마다 출제자(선생님)가 받는 점수
   HW.simText = s => s == null ? "유사도 없음" : Number(s).toFixed(2) + "%";
   // 공유된 단어 목록: 낸 순서(최근 것이 위) 또는 유사도순
   HW.hintsHtml = function (hs, th, bySim) {

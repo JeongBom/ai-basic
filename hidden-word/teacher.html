@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>히든 워드 · 출제자</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <div class="wrap">
@@ -13,6 +13,7 @@
     <div class="row" style="margin:0">
       <span id="modeBadge" class="pill"></span>
       <span class="pill">참가 <b id="pCount">0</b>명</span>
+      <span class="pill acc">선생님 <b id="tTotal">0</b>점</span>
     </div>
   </header>
 
@@ -30,6 +31,7 @@
       <div><span class="sub">방 코드</span><br><span class="code" id="roomCode"></span></div>
       <div class="grow sub">학생 접속 주소<br><span id="joinUrl" style="color:var(--txt);word-break:break-all"></span></div>
       <button id="btnBoard">전체 점수 보기</button>
+      <button id="btnEndRoom">방 끝내기</button>
     </div>
   </div>
 
@@ -114,8 +116,8 @@
   </div>
 </div>
 
-<script src="config.js?v=5"></script>
-<script src="common.js?v=5"></script>
+<script src="config.js?v=6"></script>
+<script src="common.js?v=6"></script>
 <script>
 const $ = HW.$, esc = HW.esc;
 // 인공지능 기초 단어 후보(단어 벡터에 있는 것만 단추로 나옵니다). 자유롭게 고쳐 쓰세요.
@@ -180,7 +182,7 @@ function enter(code) {
   show("secRoom", false); show("secInfo", true);
   $("roomCode").textContent = R;
   $("joinUrl").textContent = location.href.replace(/teacher\.html.*$/, "") + "?room=" + R;
-  HW.on(base() + "/state", v => { S = v || { phase: "lobby", no: 0 }; render(); });
+  HW.on(base() + "/state", v => { S = v || { phase: "lobby", no: 0 }; $("tTotal").textContent = (S.tsc || {}).total || 0; render(); });
   HW.on(base() + "/players", v => { players = v || {}; $("pCount").textContent = Object.keys(players).length; render(); });
   HW.on(base() + "/scores", v => { scores = v || {}; renderBoard(); });
   setInterval(tick, 250);
@@ -262,7 +264,7 @@ function render() {
     $("resTitle").textContent = r.ended ? `${S.no}번째 단어 끝` : `${S.stage}차 결과`;
     let h = "";
     if (r.ended) h += `<div class="sub center">히든 워드</div><div class="big accc">${esc(r.answer)}</div>`;
-    h += `<p class="center">${r.correct ? `<b class="okc">${r.correct}명 정답</b> (각 ${r.pts}점)` : `<b class="noc">정답자 없음</b>`} · 제출 ${r.total || 0}명</p>`;
+    h += `<p class="center">${r.correct ? `<b class="okc">${r.correct}명 정답</b> (각 ${r.pts}점)` : `<b class="noc">정답자 없음</b> — 선생님 +${HW.TPTS}점`} · 제출 ${r.total || 0}명</p>`;
     h += wordsHtml(r);
     $("resBody").innerHTML = h;
     $("btnNext").textContent = r.ended ? "다음 단어 정하기" : `한 차수 더 하기 (${S.stage + 1}차, 맞히면 ${HW.pts(S.stage + 1)}점)`;
@@ -295,6 +297,7 @@ function renderBoard() {
   if (!boardOn || !S) return;
   const nos = []; for (let i = 1; i <= (S.no || 0); i++) nos.push(i);
   const rows = Object.keys(players).map(u => ({ u, name: players[u].name || "?", sc: scores[u] || {} }))
+    .concat([{ u: "", name: "선생님(출제자)", sc: S.tsc || {} }])
     .sort((a, b) => (b.sc.total || 0) - (a.sc.total || 0) || String(a.name).localeCompare(String(b.name)));
   let h = `<table><tr><th>순위</th><th>학번</th>${nos.map(n => `<th>${n}번</th>`).join("")}<th>총점</th></tr>`;
   let rank = 0, prev = null;
@@ -303,7 +306,7 @@ function renderBoard() {
     const w = r.sc.w || {};
     h += `<tr><td>${rank}</td><td>${esc(r.name)}</td>${nos.map(n => `<td>${w[n] != null ? w[n] : "·"}</td>`).join("")}<td><b>${t}</b></td></tr>`;
   });
-  $("board").innerHTML = rows.length ? h + "</table>" : "<p class='sub'>아직 참가자가 없습니다.</p>";
+  $("board").innerHTML = h + "</table>";
 }
 
 // ---- 진행 ----
@@ -393,6 +396,12 @@ async function closeGuess() {
       const w = Object.assign({}, (scores[u] || {}).w); w[S.no] = pts;
       up["scores/" + u] = { w, total: Object.values(w).reduce((a, b) => a + b, 0) };
     });
+    if (!winners.length) {            // 아무도 못 맞히면 출제자(선생님)가 점수를 받음
+      const tw = {}, old = (S.tsc || {}).w || {};
+      for (const k in old) if (old[k] != null) tw[k] = old[k];
+      tw[S.no] = (tw[S.no] || 0) + HW.TPTS;
+      up["state/tsc"] = { w: tw, total: Object.values(tw).reduce((a, b) => a + (b || 0), 0) };
+    }
     up["state/phase"] = "result";
     up["state/result"] = {
       // 정답으로 낸 단어마다 히든 워드와의 유사도를 붙여 유사도가 높은 순으로 보여 줌
@@ -447,6 +456,12 @@ $("btnNext").onclick = next;
 $("btnReveal").onclick = revealAnswer;
 $("btnFinal").onclick = () => HW.update(base() + "/state", { phase: "final" });
 $("btnSort").onclick = () => { bySim = !bySim; renderHints(); };
+$("btnEndRoom").onclick = async () => {
+  if (!confirm("이 방을 끝낼까요?\n학생 화면에는 최종 점수가 표시되고, 이 방의 점수는 더 이어지지 않습니다.")) return;
+  await HW.update(base() + "/state", { phase: "final" });
+  localStorage.removeItem("hw_room"); localStorage.removeItem("hw_secret_" + R);
+  location.reload();
+};
 $("btnBoard").onclick = () => { boardOn = !boardOn; renderBoard(); };
 const eye = $("btnEye"), sec = $("secret");
 ["mousedown", "touchstart"].forEach(ev => eye.addEventListener(ev, e => { e.preventDefault(); sec.classList.remove("masked"); }));
