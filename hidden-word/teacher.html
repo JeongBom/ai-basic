@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>히든 워드 · 출제자</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <h1><b>HIDDEN</b> WORD <span class="pill">출제자</span></h1>
+    <h1><small>HIDDEN WORD · 출제자</small>히든 워드</h1>
     <div class="row" style="margin:0">
       <span id="modeBadge" class="pill"></span>
       <span class="pill">참가 <b id="pCount">0</b>명</span>
@@ -38,7 +38,7 @@
     <h2><span id="nextNo"></span>번째 히든 워드 정하기</h2>
     <div class="row">
       <input type="text" id="secret" class="grow masked" lang="ko" placeholder="히든 워드 (화면에는 가려집니다)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <button id="btnEye" title="누르고 있는 동안 보입니다">👁 누르는 동안 보기</button>
+      <button id="btnEye" title="누르고 있는 동안 보입니다">누르는 동안 보기</button>
     </div>
     <div class="row">
       <select id="cat">
@@ -46,8 +46,8 @@
         <option value="ai">인공지능 기초 단어</option>
       </select>
       <label class="sub"><input type="checkbox" id="showCat"> 학생에게 분류 알려 주기</label>
-      <button id="btnRandGen">🎲 일반 단어 무작위</button>
-      <button id="btnRandAi">🎲 인공지능 기초 단어 무작위</button>
+      <button id="btnRandGen">일반 단어 무작위</button>
+      <button id="btnRandAi">인공지능 기초 단어 무작위</button>
     </div>
     <details>
       <summary>인공지능 기초 단어 목록에서 고르기 (누르면 위 칸에 가려진 채 들어갑니다)</summary>
@@ -114,8 +114,8 @@
   </div>
 </div>
 
-<script src="config.js"></script>
-<script src="common.js"></script>
+<script src="config.js?v=5"></script>
+<script src="common.js?v=5"></script>
 <script>
 const $ = HW.$, esc = HW.esc;
 // 인공지능 기초 단어 후보(단어 벡터에 있는 것만 단추로 나옵니다). 자유롭게 고쳐 쓰세요.
@@ -281,7 +281,7 @@ function render() {
 function wordsHtml(r) {
   const ws = HW.list(r.words);
   if (!ws.length) return "";
-  return `<div class="words">` + ws.map(x => `<span class="${r.ended && x.w === r.answer ? "ok" : ""}">${esc(x.w)}<b>${x.c}</b></span>`).join("") + `</div>`;
+  return `<div class="words">` + ws.map(x => `<span class="${r.ended && x.w === r.answer ? "ok" : ""}">${esc(x.w)}<b>${x.c}명 · ${HW.simText(x.s)}</b></span>`).join("") + `</div>`;
 }
 
 function renderHints() {
@@ -395,7 +395,10 @@ async function closeGuess() {
     });
     up["state/phase"] = "result";
     up["state/result"] = {
-      words: Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(([w, c]) => ({ w, c })),
+      // 정답으로 낸 단어마다 히든 워드와의 유사도를 붙여 유사도가 높은 순으로 보여 줌
+      words: Object.entries(cnt)
+        .map(([w, c]) => ({ w, c, s: !secret ? null : w === secret ? 100 : HW.has(w) ? HW.sim(secret, w) : null }))
+        .sort((a, b) => (b.s == null ? -999 : b.s) - (a.s == null ? -999 : a.s) || b.c - a.c),
       correct: winners.length, total: Object.keys(all).length + extra, ended, pts, answer: ended ? secret : null
     };
     if (ended) up["state/history"] = HW.list(S.history).concat([{ no: S.no, answer: secret, cat: S.cat || "gen", stage: S.stage, correct: winners.length }]);
@@ -454,7 +457,7 @@ function pickRandom(list, cat) {
   if (!c.length) return $("lobbyMsg").textContent = "뽑을 단어가 남아 있지 않습니다.";
   lastPick = c[Math.floor(Math.random() * c.length)];
   sec.value = lastPick; $("cat").value = cat;
-  $("lobbyMsg").innerHTML = "<span class='okc'>무작위 단어를 넣었습니다. 「👁 누르는 동안 보기」로 확인하세요.</span>";
+  $("lobbyMsg").innerHTML = "<span class='okc'>무작위 단어를 넣었습니다. 「누르는 동안 보기」로 확인하세요.</span>";
 }
 $("btnRandGen").onclick = () => pickRandom(GEN_WORDS, "gen");
 $("btnRandAi").onclick = () => pickRandom(AI_WORDS, "ai");

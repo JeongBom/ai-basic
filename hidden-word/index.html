@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>히든 워드</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div class="wrap narrow">
   <header class="top">
-    <h1><b>HIDDEN</b> WORD</h1>
+    <h1><small>HIDDEN WORD</small>히든 워드</h1>
     <div class="row hide" id="me" style="margin:0">
       <span class="pill" id="myName"></span>
       <span class="pill acc">내 총점 <b id="myTotal">0</b>점</span>
@@ -42,8 +42,8 @@
   </div>
 </div>
 
-<script src="config.js"></script>
-<script src="common.js"></script>
+<script src="config.js?v=5"></script>
+<script src="common.js?v=5"></script>
 <script>
 const $ = HW.$, esc = HW.esc;
 let R = null, S = null, mySub = null, myScore = {}, myPriv = {}, unsubMy = null, subKey = null, lastPhaseKey = "";
@@ -162,12 +162,15 @@ function render() {
     let h = "";
     if (r.ended) h += `<div class="sub center">히든 워드</div><div class="big accc">${esc(r.answer)}</div>`;
     if (ok) h += `<p class="center"><b class="okc">정답! +${r.pts}점</b></p>`;
-    else if (mySub) h += `<p class="center"><b class="noc">아쉽습니다.</b> 내가 낸 답: ${esc(mySub)}</p>`;
+    else if (mySub) {
+      const mine = HW.list(r.words).find(x => x.w === mySub);
+      h += `<p class="center"><b class="noc">아쉽습니다.</b> 내가 낸 답: ${esc(mySub)}${mine ? ` <span class="accc">(유사도 ${HW.simText(mine.s)})</span>` : ""}</p>`;
+    }
     else h += `<p class="center sub">이번에는 답을 내지 않았습니다.</p>`;
     h += `<p class="center sub">${r.correct ? r.correct + "명이 맞혔습니다." : "아무도 맞히지 못했습니다."}${r.ended ? "" : " 선생님이 다음 진행을 정하고 있습니다."}</p>`;
     const ws = HW.list(r.words);
     if (ws.length) h += `<div class="sub">모두가 낸 답</div><div class="words">` +
-      ws.map(x => `<span class="${r.ended && x.w === r.answer ? "ok" : ""}">${esc(x.w)}<b>${x.c}</b></span>`).join("") + `</div>`;
+      ws.map(x => `<span class="${r.ended && x.w === r.answer ? "ok" : ""}">${esc(x.w)}<b>${x.c}명 · ${HW.simText(x.s)}</b></span>`).join("") + `</div>`;
     b.innerHTML = h;
   } else if (ph === "final") {
     const w = myScore.w || {};
