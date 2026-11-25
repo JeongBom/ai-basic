@@ -50,3 +50,10 @@ details summary { cursor:pointer; color:var(--sub); }
 .chips button { padding:4px 10px; font-size:14px; border-radius:999px; }
 .hide { display:none !important; }
 .center { text-align:center; }
+
+/* 글자를 화면에서만 가림(비밀번호 칸과 달리 한글 입력이 됨) */
+.masked { -webkit-text-security: disc; text-security: disc; }
+@supports not ((-webkit-text-security: disc) or (text-security: disc)) {
+  .masked { color: transparent; text-shadow: 0 0 9px var(--txt); }
+}
+.masked::placeholder { -webkit-text-security: none; text-security: none; color: var(--sub); text-shadow: none; }
