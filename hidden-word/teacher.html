@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>히든 워드 · 출제자</title>
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <div class="wrap">
@@ -119,8 +119,8 @@
   </div>
 </div>
 
-<script src="config.js?v=9"></script>
-<script src="common.js?v=9"></script>
+<script src="config.js?v=10"></script>
+<script src="common.js?v=10"></script>
 <script>
 const $ = HW.$, esc = HW.esc;
 // 인공지능 기초 단어 후보(단어 벡터에 있는 것만 단추로 나옵니다). 자유롭게 고쳐 쓰세요.
@@ -257,7 +257,7 @@ async function handleProbe(key, it) {
   const w = it.w;
   if (!secret) return reply({ st: "bad" });
   if (w === secret) { foundSet.add(it.u); renderWin(); return reply({ st: "found" }); }          // 히든 워드 자체는 공유하지 않고 그 학생만 알게 함
-  if (!HW.isWord(w) || !HW.has(w) || w.includes(secret) || secret.includes(w)) return reply({ st: "bad" });
+  if (!HW.isWord(w) || !HW.has(w)) return reply({ st: "bad" });
   if ((okCnt[it.u] || 0) >= S.max) return reply({ st: "full" });
   const hs = HW.list(S.hints);
   if (hs.some(h => h.w === w)) return reply({ st: "dup" });
@@ -359,7 +359,6 @@ async function addHint() {
   m.textContent = "";
   if (!secret) return;
   if (!HW.isWord(w)) return m.textContent = "한글 단어 하나를 입력해 주세요.";
-  if (w.includes(secret) || secret.includes(w)) return m.textContent = "히든 워드가 들어 있는 단어는 힌트로 쓸 수 없습니다.";
   if (!HW.has(w)) return m.textContent = "단어 벡터에 없는 단어입니다.";
   $("hintIn").value = "";
   queue = queue.then(async () => {
