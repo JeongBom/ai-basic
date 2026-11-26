@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>히든 워드 · 출제자</title>
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <div class="wrap">
@@ -116,8 +116,8 @@
   </div>
 </div>
 
-<script src="config.js?v=6"></script>
-<script src="common.js?v=6"></script>
+<script src="config.js?v=7"></script>
+<script src="common.js?v=7"></script>
 <script>
 const $ = HW.$, esc = HW.esc;
 // 인공지능 기초 단어 후보(단어 벡터에 있는 것만 단추로 나옵니다). 자유롭게 고쳐 쓰세요.
@@ -235,9 +235,9 @@ async function handleProbe(key, it) {
   if (hs.some(h => h.w === w)) return reply({ st: "dup" });
   const s = HW.sim(secret, w);
   okCnt[it.u] = (okCnt[it.u] || 0) + 1;
-  hs.push({ w, s, st: S.stage });
+  hs.push({ w, s, r: HW.rank(secret, w), st: S.stage });
   await HW.update(base() + "/state", { hints: hs });
-  await reply({ st: "ok", w, s });
+  await reply({ st: "ok", w, s, r: HW.rank(secret, w) });
   if (s >= S.th) await startGuess();                          // 기준을 넘는 단어가 나오면 바로 정답 받기로
 }
 
@@ -283,12 +283,12 @@ function render() {
 function wordsHtml(r) {
   const ws = HW.list(r.words);
   if (!ws.length) return "";
-  return `<div class="words">` + ws.map(x => `<span class="${r.ended && x.w === r.answer ? "ok" : ""}">${esc(x.w)}<b>${x.c}명 · ${HW.simText(x.s)}</b></span>`).join("") + `</div>`;
+  return `<div class="words">` + ws.map(x => `<span class="${r.ended && x.w === r.answer ? "ok" : ""}">${esc(x.w)}<b>${x.c}명 · ${HW.simRank(x)}</b></span>`).join("") + `</div>`;
 }
 
 function renderHints() {
   $("hintList").innerHTML = HW.hintsHtml(HW.list(S.hints), S.th, bySim);
-  $("btnSort").textContent = bySim ? "낸 순서로 보기" : "유사도순으로 보기";
+  $("btnSort").textContent = bySim ? "낸 순서로 보기" : "순위순으로 보기";
 }
 
 function renderBoard() {
@@ -338,7 +338,7 @@ async function addHint() {
     const hs = HW.list(S.hints);
     if (hs.some(h => h.w === w)) { m.textContent = "이미 나온 단어입니다."; return; }
     const s = HW.sim(secret, w);
-    hs.push({ w, s, st: S.stage, tch: 1 });
+    hs.push({ w, s, r: HW.rank(secret, w), st: S.stage, tch: 1 });
     await HW.update(base() + "/state", { hints: hs });
     if (s >= S.th) await startGuess();
   });
@@ -353,7 +353,7 @@ async function revealNear() {
   if (!secret) return;
   const hs = HW.list(S.hints), nb = nearestOne(hs);
   if (!nb) return;
-  hs.push({ w: nb.w, s: nb.s, st: S.stage, auto: true });
+  hs.push({ w: nb.w, s: nb.s, r: HW.rank(secret, nb.w), st: S.stage, auto: true });
   await HW.update(base() + "/state", { hints: hs });
 }
 
@@ -406,7 +406,7 @@ async function closeGuess() {
     up["state/result"] = {
       // 정답으로 낸 단어마다 히든 워드와의 유사도를 붙여 유사도가 높은 순으로 보여 줌
       words: Object.entries(cnt)
-        .map(([w, c]) => ({ w, c, s: !secret ? null : w === secret ? 100 : HW.has(w) ? HW.sim(secret, w) : null }))
+        .map(([w, c]) => ({ w, c, s: !secret ? null : w === secret ? 100 : HW.has(w) ? HW.sim(secret, w) : null, r: secret ? HW.rank(secret, w) : null }))
         .sort((a, b) => (b.s == null ? -999 : b.s) - (a.s == null ? -999 : a.s) || b.c - a.c),
       correct: winners.length, total: Object.keys(all).length + extra, ended, pts, answer: ended ? secret : null
     };

@@ -39,12 +39,13 @@ button:disabled { opacity:.4; cursor:default; }
 .big { font-size:44px; font-weight:800; text-align:center; margin:6px 0; }
 .timer { font-size:56px; font-weight:800; text-align:center; color:var(--txt); font-variant-numeric:tabular-nums; line-height:1.2; margin:6px 0; }
 
-.hint { display:grid; grid-template-columns:30px 1fr 78px; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid #ebe8df; }
+.hint { display:grid; grid-template-columns:30px 1fr 96px; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid #ebe8df; }
 .hint:last-child { border-bottom:0; }
 .hint .n { color:var(--sub); font-size:13px; text-align:right; font-variant-numeric:tabular-nums; }
 .hint .w { font-weight:700; font-size:19px; }
 .hint .w small { font-weight:400; color:var(--sub); font-size:13px; margin-left:8px; }
 .hint .p { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
+.hint .p small { display:block; font-weight:400; font-size:13px; color:var(--sub); }
 .bar { height:4px; background:#ebe8df; margin-top:5px; overflow:hidden; }
 .bar i { display:block; height:100%; background:var(--txt); }
 .hint.hit .w, .hint.hit .p { color:var(--ok); }
