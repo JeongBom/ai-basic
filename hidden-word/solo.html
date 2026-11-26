@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>히든 워드 · 혼자 하기</title>
+<link rel="stylesheet" href="style.css?v=11">
+</head>
+<body>
+<div class="wrap narrow">
+  <header class="top">
+    <h1><small>HIDDEN WORD · 혼자 하기</small>히든 워드</h1>
+    <div class="row" style="margin:0">
+      <span class="pill">맞힌 단어 <b id="solved">0</b>개</span>
+      <span class="pill acc">이번 단어 <b id="tries">0</b>번째</span>
+    </div>
+  </header>
+
+  <div id="loading" class="card center">단어 벡터를 불러오는 중…</div>
+
+  <div id="secPlay" class="card hide">
+    <div class="row" style="margin-top:0">
+      <select id="kind">
+        <option value="all">일반 + 인공지능 기초</option>
+        <option value="gen">일반 단어</option>
+        <option value="ai">인공지능 기초 단어</option>
+      </select>
+      <span class="sub">다음 단어부터 적용됩니다.</span>
+    </div>
+    <div class="row">
+      <input type="text" id="guess" class="grow" lang="ko" placeholder="단어(명사)" autocomplete="off">
+      <button class="main" id="btnGo">내기</button>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div id="last"></div>
+    <div class="row">
+      <button id="btnGiveUp">포기하고 정답 보기</button>
+    </div>
+  </div>
+
+  <div id="secDone" class="card hide center">
+    <div class="sub" id="doneHead"></div>
+    <div class="big accc" id="doneWord"></div>
+    <p id="doneLine"></p>
+    <button class="main" id="btnNext">다음 단어</button>
+  </div>
+
+  <div id="secList" class="card hide">
+    <div class="row" style="justify-content:space-between;margin-top:0"><h2 style="margin:0">낸 단어</h2><button id="btnSort"></button></div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script src="lists.js?v=11"></script>
+<script src="common.js?v=11"></script>
+<script>
+const $ = HW.$, esc = HW.esc, KEY = "hw_solo";
+// G: 진행 상황(이 브라우저에만 저장) — w 히든 워드, cat 분류, gs 낸 단어, done 끝났는지, used 이미 나온 단어, solved 맞힌 개수
+let G = null, bySim = true;
+const save = () => localStorage.setItem(KEY, JSON.stringify(G));
+
+function pool(kind) {
+  const src = kind === "gen" ? GEN_WORDS : kind === "ai" ? AI_WORDS : GEN_WORDS.concat(AI_WORDS);
+  return src.filter(w => w.length >= 2 && HW.has(w));
+}
+function newWord() {
+  const kind = $("kind").value;
+  let c = pool(kind).filter(w => !G.used.includes(w));
+  if (!c.length) { G.used = []; c = pool(kind); }          // 다 나왔으면 처음부터 다시
+  const w = c[Math.floor(Math.random() * c.length)];
+  G.w = w; G.cat = AI_WORDS.includes(w) ? "ai" : "gen"; G.gs = []; G.done = null; G.kind = kind;
+  G.used.push(w);
+  save(); render();
+  $("guess").focus();
+}
+
+function row(x, hit) {
+  return `<div class="hint ${hit ? "hit" : ""}"><div class="n">${x.n}</div>
+    <div><div class="w">${esc(x.w)}</div><div class="bar"><i style="width:${Math.max(0, Math.min(100, x.s))}%"></i></div></div>
+    <div class="p">${x.s.toFixed(2)}%<small>${HW.rankText(x.r)}</small></div></div>`;
+}
+function render() {
+  $("solved").textContent = G.solved || 0;
+  $("tries").textContent = G.gs.length + (G.done ? 0 : 1);
+  show("secPlay", !G.done); show("secDone", !!G.done); show("secList", G.gs.length > 0);
+  if (G.done) {
+    $("doneHead").textContent = G.done === "win" ? "정답" : "히든 워드";
+    $("doneWord").textContent = G.w;
+    $("doneLine").innerHTML = (G.done === "win" ? `<b class="okc">${G.gs.length}번 만에 맞혔습니다.</b>` : `<b class="noc">포기했습니다.</b> 낸 단어 ${G.gs.length}개`)
+      + (G.cat === "ai" ? " <span class='pill ai'>인공지능 기초</span>" : "");
+  }
+  const last = G.gs[G.gs.length - 1];
+  $("last").innerHTML = last && !G.done ? `<div class="stagehead">방금 낸 단어</div>` + row(last) : "";
+  const a = G.gs.slice();
+  if (bySim) a.sort((x, y) => y.s - x.s); else a.reverse();
+  $("list").innerHTML = a.map(x => row(x, x.r === 0)).join("");
+  $("btnSort").textContent = bySim ? "낸 순서로 보기" : "유사도순으로 보기";
+}
+function show(id, on) { $(id).classList.toggle("hide", !on); }
+
+function go() {
+  const w = HW.norm($("guess").value), m = $("msg");
+  m.textContent = "";
+  if (G.done) return;
+  if (!HW.isWord(w)) return m.textContent = "한글 단어 하나를 입력해 주세요.";
+  if (!HW.has(w)) return m.textContent = "단어 벡터에 없는 단어입니다.";
+  $("guess").value = "";
+  if (G.gs.some(x => x.w === w)) return m.textContent = "이미 낸 단어입니다.";
+  const hit = w === G.w;
+  G.gs.push({ n: G.gs.length + 1, w, s: hit ? 100 : HW.sim(G.w, w), r: HW.rank(G.w, w) });
+  if (hit) { G.done = "win"; G.solved = (G.solved || 0) + 1; }
+  save(); render();
+  if (hit) $("btnNext").focus();
+}
+
+$("btnGo").onclick = go;
+$("guess").onkeydown = e => { if (e.key === "Enter" && !e.isComposing) go(); };
+$("btnGiveUp").onclick = () => { if (confirm("포기하고 정답을 볼까요?")) { G.done = "giveup"; save(); render(); } };
+$("btnNext").onclick = newWord;
+$("btnSort").onclick = () => { bySim = !bySim; render(); };
+
+(async function () {
+  try { await HW.loadVec(); }
+  catch (e) { $("loading").innerHTML = "불러오지 못했습니다: " + esc(e.message); return; }
+  show("loading", false);
+  try { G = JSON.parse(localStorage.getItem(KEY)); } catch (e) { G = null; }
+  if (!G || !G.w || !HW.has(G.w)) { G = { used: (G && G.used) || [], solved: (G && G.solved) || 0, gs: [] }; newWord(); }
+  else { $("kind").value = G.kind || "all"; render(); }
+})();
+</script>
+</body>
+</html>
