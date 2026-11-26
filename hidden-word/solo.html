@@ -57,7 +57,7 @@
 <script>
 const $ = HW.$, esc = HW.esc, KEY = "hw_solo";
 // G: 진행 상황(이 브라우저에만 저장) — w 히든 워드, cat 분류, gs 낸 단어, done 끝났는지, used 이미 나온 단어, solved 맞힌 개수
-let G = null, bySim = true;
+let G = null, bySim = true, again = false;
 const save = () => localStorage.setItem(KEY, JSON.stringify(G));
 
 function pool(kind) {
@@ -69,7 +69,7 @@ function newWord() {
   let c = pool(kind).filter(w => !G.used.includes(w));
   if (!c.length) { G.used = []; c = pool(kind); }          // 다 나왔으면 처음부터 다시
   const w = c[Math.floor(Math.random() * c.length)];
-  G.w = w; G.cat = AI_WORDS.includes(w) ? "ai" : "gen"; G.gs = []; G.done = null; G.kind = kind;
+  G.w = w; G.cat = AI_WORDS.includes(w) ? "ai" : "gen"; G.gs = []; G.done = null; G.kind = kind; G.lastW = null; again = false;
   G.used.push(w);
   save(); render();
   $("guess").focus();
@@ -90,8 +90,8 @@ function render() {
     $("doneLine").innerHTML = (G.done === "win" ? `<b class="okc">${G.gs.length}번 만에 맞혔습니다.</b>` : `<b class="noc">포기했습니다.</b> 낸 단어 ${G.gs.length}개`)
       + (G.cat === "ai" ? " <span class='pill ai'>인공지능 기초</span>" : "");
   }
-  const last = G.gs[G.gs.length - 1];
-  $("last").innerHTML = last && !G.done ? `<div class="stagehead">방금 낸 단어</div>` + row(last) : "";
+  const last = G.gs.find(x => x.w === G.lastW) || G.gs[G.gs.length - 1];
+  $("last").innerHTML = last && !G.done ? `<div class="stagehead">${again ? "이미 낸 단어" : "방금 낸 단어"}</div>` + row(last) : "";
   const a = G.gs.slice();
   if (bySim) a.sort((x, y) => y.s - x.s); else a.reverse();
   $("list").innerHTML = a.map(x => row(x, x.r === 0)).join("");
@@ -106,7 +106,9 @@ function go() {
   if (!HW.isWord(w)) return m.textContent = "한글 단어 하나를 입력해 주세요.";
   if (!HW.has(w)) return m.textContent = "단어 벡터에 없는 단어입니다.";
   $("guess").value = "";
-  if (G.gs.some(x => x.w === w)) return m.textContent = "이미 낸 단어입니다.";
+  // 이미 낸 단어는 횟수에 넣지 않고 맨 위에 다시 보여 줌
+  if (G.gs.some(x => x.w === w)) { G.lastW = w; again = true; save(); return render(); }
+  G.lastW = w; again = false;
   const hit = w === G.w;
   G.gs.push({ n: G.gs.length + 1, w, s: hit ? 100 : HW.sim(G.w, w), r: HW.rank(G.w, w) });
   if (hit) { G.done = "win"; G.solved = (G.solved || 0) + 1; }
