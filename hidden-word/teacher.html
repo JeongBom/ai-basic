@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>히든 워드 · 출제자</title>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <div class="wrap">
@@ -69,6 +69,9 @@
     <div class="sub" id="histLine"></div>
   </div>
 
+  <!-- 정답자 알림(출제자 화면에만) -->
+  <div id="winNote" class="win hide">정답자가 나왔습니다 · <span id="winCount">0</span>명</div>
+
   <!-- 힌트 제시 -->
   <div id="secHint" class="card hide">
     <h2><span id="hintTitle"></span></h2>
@@ -116,15 +119,18 @@
   </div>
 </div>
 
-<script src="config.js?v=7"></script>
-<script src="common.js?v=7"></script>
+<script src="config.js?v=9"></script>
+<script src="common.js?v=9"></script>
 <script>
 const $ = HW.$, esc = HW.esc;
 // 인공지능 기초 단어 후보(단어 벡터에 있는 것만 단추로 나옵니다). 자유롭게 고쳐 쓰세요.
 const AI_WORDS = ("인공지능 지능 에이전트 탐색 추론 지식 학습 기계학습 머신러닝 딥러닝 데이터 속성 빅데이터 분류 회귀 군집 예측 모델 훈련 평가 정확도 정밀도 " +
   "보상 신경망 인공신경망 뉴런 가중치 편향 편향성 활성화 손실 오차 최적화 알고리즘 센서 인식 음성인식 자연어 챗봇 자율주행 로봇 " +
   "휴리스틱 이미지 픽셀 정규화 전처리 시각화 상관관계 특징 레이블 윤리 공정성 투명성 개인정보 저작권 일자리 프롬프트 토큰 에포크 의사결정 " +
-  "벡터 유사도 확률 통계 함수 행렬 매개변수 변수 검증 튜링 컴퓨터 프로그램 정보 문제 해결 판단 규칙 패턴").split(" ");
+  "벡터 유사도 확률 통계 함수 행렬 매개변수 변수 검증 튜링 컴퓨터 프로그램 정보 문제 해결 판단 규칙 패턴 " +
+  "결측치 결측값 이상치 이상값 과적합 퍼셉트론 지도학습 비지도학습 강화학습 은닉층 산점도 히스토그램 손실함수 역전파 재현율 선형회귀 " +
+  "임베딩 토큰화 시그모이드 렐루 소프트맥스 합성곱 군집분석 교차검증 결정계수 의사결정나무 범주형 수치형 속성값 데이터프레임 " +
+  "자연어처리 컴퓨터비전 문자인식 추천시스템 전문가시스템 생성형 감정분석 익명화 레이블링 표준편차 중앙값 평균").split(" ");
 
 // 일반 단어 후보(무작위 뽑기용). 자유롭게 고쳐 쓰세요.
 const GEN_WORDS = ("바다 학교 사과 여행 음악 영화 친구 가족 시간 사랑 겨울 여름 가을 하늘 구름 바람 태양 우주 지구 호수 나무 동물 고양이 강아지 호랑이 사자 코끼리 토끼 물고기 나비 " +
@@ -137,6 +143,7 @@ const GEN_WORDS = ("바다 학교 사과 여행 음악 영화 친구 가족 시�
 
 let R = null, S = null, secret = "", players = {}, scores = {}, subs = {}, unsubSubs = null, subsKey = null, closing = false, boardOn = false, bySim = false;
 let unsubPr = null, prKey = null, done = new Set(), okCnt = {}, queue = Promise.resolve(), moving = false;
+let foundNo = null, foundSet = new Set();   // 단어 내는 단계에서 히든 워드를 찾아낸 학생
 const base = () => "rooms/" + R;
 const defaults = { th: 95, max: 3, hsec: 120, sec: 60 };
 
@@ -193,7 +200,28 @@ function watchSubs() {
   if (key === subsKey) return;
   if (unsubSubs) { unsubSubs(); unsubSubs = null; }
   subsKey = key; subs = {};
-  if (key) unsubSubs = HW.on(base() + "/subs/" + key, v => { if (subsKey !== key) return; subs = v || {}; $("subCount").textContent = Object.keys(subs).length; });
+  if (key) unsubSubs = HW.on(base() + "/subs/" + key, v => { if (subsKey !== key) return; subs = v || {}; $("subCount").textContent = Object.keys(subs).length; renderWin(); });
+}
+
+// 이번 히든 워드를 맞힌 학생이 있으면 출제자 화면에 알림
+function loadFound() {
+  if (!S || S.no === foundNo) return;
+  const no = foundNo = S.no; foundSet = new Set();
+  HW.get(base() + "/priv").then(pv => {
+    if (foundNo !== no) return;
+    for (const u in (pv || {})) for (const k in (pv[u] || {})) {
+      if (k.split("_")[0] !== String(no)) continue;
+      for (const n in pv[u][k]) if (pv[u][k][n] && pv[u][k][n].st === "found") foundSet.add(u);
+    }
+    renderWin();
+  });
+}
+function renderWin() {
+  const on = !!S && (S.phase === "hint" || S.phase === "guess") && !!secret;
+  const who = new Set(foundSet);
+  if (on && S.phase === "guess") for (const u in subs) if (HW.norm(subs[u] && subs[u].w) === secret) who.add(u);
+  show("winNote", on && who.size > 0);
+  $("winCount").textContent = who.size;
 }
 
 function stageHints() { return HW.list(S.hints).filter(h => h.st === S.stage && !h.auto); }
@@ -228,7 +256,7 @@ async function handleProbe(key, it) {
   if (!S || S.phase !== "hint" || S.key !== key) return reply({ st: "late" });
   const w = it.w;
   if (!secret) return reply({ st: "bad" });
-  if (w === secret) return reply({ st: "found" });          // 히든 워드 자체는 공유하지 않고 그 학생만 알게 함
+  if (w === secret) { foundSet.add(it.u); renderWin(); return reply({ st: "found" }); }          // 히든 워드 자체는 공유하지 않고 그 학생만 알게 함
   if (!HW.isWord(w) || !HW.has(w) || w.includes(secret) || secret.includes(w)) return reply({ st: "bad" });
   if ((okCnt[it.u] || 0) >= S.max) return reply({ st: "full" });
   const hs = HW.list(S.hints);
@@ -247,7 +275,7 @@ function render() {
   show("secLobby", ph === "lobby"); show("secHint", ph === "hint"); show("secGuess", ph === "guess");
   show("secResult", ph === "result" || ph === "final");
   show("secHints", ph !== "lobby" && ph !== "final" && HW.list(S.hints).length > 0);
-  watchSubs(); watchProbes();
+  watchSubs(); watchProbes(); loadFound(); renderWin();
   if (ph === "lobby") {
     $("nextNo").textContent = (S.no || 0) + 1;
     const h = HW.list(S.history);

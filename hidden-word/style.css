@@ -52,6 +52,7 @@ button:disabled { opacity:.4; cursor:default; }
 .hint.hit .bar i { background:var(--ok); }
 .hint.auto .w { color:var(--ai); }
 .hint.auto .bar i { background:var(--ai); }
+.win { text-align:center; font-size:22px; font-weight:800; color:var(--ok); background:var(--card); border:2px solid var(--ok); border-radius:4px; padding:12px; margin-bottom:14px; }
 .stagehead { color:var(--sub); font-size:13px; margin:10px 0 2px; }
 
 .words { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }

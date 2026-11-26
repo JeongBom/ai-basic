@@ -107,8 +107,8 @@ const HW = {};
   let words = null, V = null, idx = null, norms = null;
   HW.loadVec = async function () {
     const [wt, vb] = await Promise.all([
-      fetch("vec/words.txt").then(r => { if (!r.ok) throw new Error("words.txt"); return r.text(); }),
-      fetch("vec/vectors.bin").then(r => { if (!r.ok) throw new Error("vectors.bin"); return r.arrayBuffer(); })
+      fetch("vec/words.txt?v=9").then(r => { if (!r.ok) throw new Error("words.txt"); return r.text(); }),
+      fetch("vec/vectors.bin?v=9").then(r => { if (!r.ok) throw new Error("vectors.bin"); return r.arrayBuffer(); })
     ]);
     words = wt.split("\n");
     V = new Int8Array(vb);
